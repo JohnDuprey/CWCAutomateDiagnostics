@@ -1,6 +1,10 @@
 # CWCAutomateDiagnostics
+Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extension utilizes the Labtech-Powershell-Module to review CWA agent settings and service statuses with automatic repairs.
 
-![example](https://i.snag.gy/P21qyJ.jpg)
+## Features
+- Forces agent updates using Update-LTService
+- Verifies LTService and LTSVCmon services are running and set to Automatic.
+- Verifies checkin and heartbeat times
 
 ## Installation
 
@@ -10,6 +14,7 @@
 ## Usage
 - Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot).
 - Script can be manually invoked from the Automate tab on the Host screen.
+![example](https://i.snag.gy/P21qyJ.jpg)
 
 ## Credit
 - CTaylor's Labtech-Powershell-Module - https://github.com/LabtechConsulting/LabTech-Powershell-Module 
