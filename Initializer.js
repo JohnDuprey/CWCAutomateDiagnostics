@@ -87,7 +87,6 @@ function getInputCommand(diagnosticType, operatingSystem) {
 		emptyLinePrefix = 'echo ';
 	else{
 		emptyLinePrefix = 'echo ""';
-		commandText = "$Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size (500, 25)" + "\n" + commandText;
 	}
 	
 	return  "#!" + headers.shaBang + "\n" +
