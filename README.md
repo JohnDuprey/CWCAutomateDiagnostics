@@ -1,5 +1,5 @@
 # CWCAutomateDiagnostics
-Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extension utilizes the Labtech-Powershell-Module to review CWA agent settings and service statuses with automatic repairs.
+Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extension utilizes the Labtech-Powershell-Module to review CWA agent settings and service statuses. The extension will also perform automatic repairs.
 
 ## Features
 - Forces agent updates using Update-LTService
