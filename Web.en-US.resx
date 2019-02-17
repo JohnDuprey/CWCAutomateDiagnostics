@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <data name="Diagnostics.Automate.Button" xml:space="preserve">
+    <value>Run Diagnostic</value>
+  </data>
+  
+  <data name="Diagnostics.Automate.Label" xml:space="preserve">
+    <value>Automate Diagnostics</value>
+  </data>
+  
+  <data name="Diagnostics.LastUpdateField.Label" xml:space="preserve">
+    <value>Last Updated: </value>
+  </data>
+  
+  <data name="Diagnostics.Filter.Label" xml:space="preserve">
+    <value>Filter: </value>
+  </data>
+  
+</root>

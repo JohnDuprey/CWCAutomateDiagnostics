@@ -1,0 +1,51 @@
+.Automate {
+	text-align:center;
+	margin-top: 5px;
+}
+
+.Automate > table {
+	text-align:left;
+	margin-left: auto; 
+	margin-right: auto;
+	table-layout:fixed;
+}
+
+.success,
+.failed {
+	font-weight: bold !important;
+	font-size: 14px;
+}
+
+.success {
+	color: green !important;
+}
+
+.failed {
+	color: red !important;
+}
+
+.TabAutomate {
+	background-image:url('Images\Automate.png');
+}
+
+#diagnosticButton{
+	width:100%;
+	z-index:5;
+}
+
+#dataTableHeader, #dataTableData{
+	border:0px;
+	padding:3px;
+	font-size:10px;
+	word-wrap:break-word
+}
+
+#lastUpdateContainer{
+	top:5%;
+	padding-top: 10px;
+}
+
+#dataTable{
+	top:10%;
+	width:95%;
+}
