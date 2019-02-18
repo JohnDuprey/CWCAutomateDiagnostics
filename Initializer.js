@@ -154,17 +154,20 @@ function parseDataHeaders(eventData) {
 
 function displayDiagnosticInformation(latestDiagnosticEvent, baseTime) {
 	var headers = parseDataHeaders(latestDiagnosticEvent.Data);
-	displayDataJson(parseJson(latestDiagnosticEvent.Data));	
+	var output = latestDiagnosticEvent.Data;
+	var data = output.split("!---BEGIN JSON---!");
+	console.log(data[1]);
+	displayDataJson(parseJson(data[1]));	
 	$('lastUpdateContainer').innerHTML = SC.res['Diagnostics.LastUpdateField.Label'] + new Date(latestDiagnosticEvent.Time + baseTime);
 }
 
 function parseJson(eventData) {
-	var lines=eventData.split('\n');
-	var json_text = "";
-	for(var i=3;i<lines.length;i++){
-		json_text = json_text + "\n" + lines[i];
-	}
-	var json = JSON.parse(json_text);
+	//var lines=eventData.split('\n');
+	//var json_text = "";
+	//for(var i=3;i<lines.length;i++){
+	//	json_text = json_text + "\n" + lines[i];
+	//}
+	var json = JSON.parse(eventData);
 	console.log(json);
 	return json;
 }
