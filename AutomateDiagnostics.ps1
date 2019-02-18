@@ -341,8 +341,11 @@ Function Start-AutomateDiagnostics {
 		$update_text = "No updates to install, on {0}" -f $info.Version
 	}
 	else {
-		$results = Update-LTService -WarningVariable updatetest -WarningAction SilentlyContinue
-		$updatedebug = $updatetest[0].message
+        taskkill /im ltsvc.exe /f
+        taskkill /im ltsvcmon.exe /f
+        taskkill /im lttray.exe /f
+        $results = Update-LTService -WarningVariable updatetest -WarningAction SilentlyContinue
+        Start-Sleep -Seconds 30
 		$info = Get-LTServiceInfo
 		if ([version]$info.Version -gt [version]$current_version) {
 			$update_text = 'Updated from {1} to {0}' -f $info.Version,$current_version
@@ -360,7 +363,6 @@ Function Start-AutomateDiagnostics {
 		'online' = $online
 		'heartbeat' = $heartbeat
 		'update' = $update_text
-		'updatedebug' = $updatedebug
 		'lastcontact'  = $info.LastSuccessStatus
 		'heartbeat_sent' = $info.HeartbeatLastSent
 		'heartbeat_rcv' = $info.HeartbeatLastReceived
