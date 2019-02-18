@@ -94,7 +94,7 @@ function getInputCommand(diagnosticType, operatingSystem) {
 	
 	return  "#!" + headers.shaBang + "\n" +
 		"#maxlength=100000" + "\n" +
-		"#timeout=90000" + "\n" +
+		"#timeout=300000" + "\n" +
 		headers.modifier + "DIAGNOSTIC-RESPONSE/1" + headers.delimiter  + "\n" +
 		headers.modifier + "DiagnosticType: " + headers.DiagnosticType + headers.delimiter  + "\n" +
 		headers.modifier + "ContentType: " + headers.ContentType + headers.delimiter  + "\n" +
