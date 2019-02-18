@@ -7,9 +7,14 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 - Verifies checkin and heartbeat times
 
 ## Installation
+1. Download the latest release zip and extract into %programfiles(x86)%\ScreenConnect\App_Extensions\
+2. Enable the extension in the administration page.
+
+OR
 
 1. Create a new directory for the extension - %programfiles(x86)%\ScreenConnect\App_Extensions\e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76
-2. Extract all files into directory and enable the extension in settings.
+2. Download the lastest master zip and extract all files into the directory 
+3. Enable the extension in the administration page.
 
 ## Usage
 - Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot).
