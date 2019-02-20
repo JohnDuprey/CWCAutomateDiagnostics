@@ -6,7 +6,7 @@ Function serviceCheck($service){
 	
 	if ($svc_info.StartMode -eq 'Auto') { $start_check = 'Automatic' }
 	else { $svc_info.ChangeStartMode('Auto'); $start_check = 'Previously set to {0} changed to Auto' -f $svc_info.StartMode }
-	@{'Status' = $state_check; 'Start Mode' = $start_check }
+	@{'Status' = $state_check; 'Start Mode' = $start_check; 'User' = $svc_info.StartName}
 }
 
 # Check PS Version
@@ -258,85 +258,102 @@ Function Start-AutomateDiagnostics {
 		$ltposh = "http://bit.ly/LTPoSh"
 	)
 
-	# Invoke LTPosh
-	(new-object Net.WebClient).DownloadString($ltposh) | iex
-	
-	# Get powershell version
+    # Get powershell version
 	$psver = Get-PSVersion
+    
+    # Invoke LTPosh
+	(new-object Net.WebClient).DownloadString($ltposh) | iex
+
+    Try {
+        Get-Command -ListImported -Name Get-LTServiceInfo
+        $ltposh_loaded = $true
+    }
+    Catch {
+        $ltposh_loaded = $false
+    }
 
 	# Check services
 	$ltservice_check = serviceCheck('LTService')
-	$ltsvcmon_check = serviceCheck('LTSVCMon')
+    $ltsvcmon_check = serviceCheck('LTSVCMon')
 
-	# Get ltservice info
-	$info = Get-LTServiceInfo
-	$lastsuccess = Get-Date $info.LastSuccessStatus
-	$lasthbsent = Get-Date $info.HeartbeatLastSent
-	$lasthbrcv = Get-Date $info.HeartbeatLastReceived
+    if ($ltposh_loaded) {
+	    # Get ltservice info
+	    $info = Get-LTServiceInfo
+	    $lastsuccess = Get-Date $info.LastSuccessStatus
+	    $lasthbsent = Get-Date $info.HeartbeatLastSent
+	    $lasthbrcv = Get-Date $info.HeartbeatLastReceived
 
-	# Check online and heartbeat statuses
-	$online_threshold = (Get-Date).AddMinutes(-5)
-	$heartbeat_threshold = (Get-Date).AddMinutes(-5)
-	$servers = ($info.'Server Address').Split('|')
-	$online = $lastsuccess -ge $online_threshold
-	$heartbeat_rcv = $lasthbrcv -ge $heartbeat_threshold 
-	$heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
-	$heartbeat = $heartbeat_rcv -or $heartbeat_snd
+	    # Check online and heartbeat statuses
+	    $online_threshold = (Get-Date).AddMinutes(-5)
+	    $heartbeat_threshold = (Get-Date).AddMinutes(-5)
+	    $servers = ($info.'Server Address').Split('|')
+	    $online = $lastsuccess -ge $online_threshold
+	    $heartbeat_rcv = $lasthbrcv -ge $heartbeat_threshold 
+	    $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
+	    $heartbeat = $heartbeat_rcv -or $heartbeat_snd
 
-	# Get server list
-	$server_test = $false
-	foreach ($server in $servers) {
-		$hostname = extractHostname($server)
-		$conn_test = Test-Connection $hostname
-		$ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
-		$target_version = $ver_test.Split('|')[6]
-		if ($conn_test -and $target_version -ne "") {
-			$server_test = $true
-			$server_msg = "$server passed all checks"
-			break
-		}
-	}
-	if ($server_test -eq $false) {
-		$server_msg = "Error running Automate server tests"
-	}
+	    # Get server list
+	    $server_test = $false
+	    foreach ($server in $servers) {
+    		$hostname = extractHostname($server)
+		    $conn_test = Test-Connection $hostname
+		    $ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
+		    $target_version = $ver_test.Split('|')[6]
+		    if ($conn_test -and $target_version -ne "") {
+    			$server_test = $true
+			    $server_msg = "$server passed all checks"
+			    break
+		    }
+	    }
+	    if ($server_test -eq $false) {
+    		$server_msg = "Error running Automate server tests"
+    	}
 
-	# Check updates
-	$updatedebug = ""
-	$current_version = $info.Version
-	if ($target_version -eq $info.Version) {
-		$update_text = "No updates to install, on {0}" -f $info.Version
-	}
-	else {
-        taskkill /im ltsvc.exe /f
-        taskkill /im ltsvcmon.exe /f
-        taskkill /im lttray.exe /f
-        $results = Update-LTService -WarningVariable updatetest -WarningAction SilentlyContinue
-        Start-Sleep -Seconds 45
-        Start-Service LTService
-        Start-Service LTSvcMon
-		$info = Get-LTServiceInfo
-		if ([version]$info.Version -gt [version]$current_version) {
-			$update_text = 'Updated from {1} to {0}' -f $info.Version,$current_version
-		}
-		else {
-			$update_text = 'Error updating to {0}, still on {1}' -f $target_version,$info.Version
-		}
-	}
-
-	# Collect diagnostic data into hashtable
-	$diag = @{
-		'id' = $info.id
-		'version' = $info.Version
-		'server_addr' = $server_msg
-		'online' = $online
-		'heartbeat' = $heartbeat
-		'update' = $update_text
-		'lastcontact'  = $info.LastSuccessStatus
-		'heartbeat_sent' = $info.HeartbeatLastSent
-		'heartbeat_rcv' = $info.HeartbeatLastReceived
-		'svc_ltservice' = $ltservice_check
-		'svc_ltsvcmon' = $ltsvcmon_check
-	}
+    	# Check updates
+    	$updatedebug = ""
+    	$current_version = $info.Version
+    	if ($target_version -eq $info.Version) {
+		    $update_text = "No updates to install, on {0}" -f $info.Version
+	    }
+	    else {
+            taskkill /im ltsvc.exe /f
+            taskkill /im ltsvcmon.exe /f
+            taskkill /im lttray.exe /f
+            $results = Update-LTService -WarningVariable updatetest -WarningAction SilentlyContinue
+            Start-Sleep -Seconds 45
+            Start-Service LTService
+            Start-Service LTSvcMon
+		    $info = Get-LTServiceInfo
+		    if ([version]$info.Version -gt [version]$current_version) {
+    			$update_text = 'Updated from {1} to {0}' -f $info.Version,$current_version
+            }
+            else {
+                $update_text = 'Error updating to {0}, still on {1}' -f $target_version,$info.Version
+            }
+	    }
+        # Collect diagnostic data into hashtable
+        $diag = @{
+            'id' = $info.id
+            'version' = $info.Version
+            'server_addr' = $server_msg
+            'online' = $online
+            'heartbeat' = $heartbeat
+            'update' = $update_text
+            'lastcontact'  = $info.LastSuccessStatus
+            'heartbeat_sent' = $info.HeartbeatLastSent
+            'heartbeat_rcv' = $info.HeartbeatLastReceived
+            'svc_ltservice' = $ltservice_check
+            'svc_ltsvcmon' = $ltsvcmon_check
+            'ltposh_loaded' = $ltposh_loaded
+        }
+    }
+    else {
+        $diag = @{
+            'svc_ltservice' = $ltservicecheck
+            'svc_ltsvcmon' = $ltsvcmon_check
+            'ltposh_loaded' = $ltposh_loaded
+        }
+    }
 	Write-Output "!---BEGIN JSON---!"
 
 	# Output diagnostic data in JSON format

@@ -8,7 +8,7 @@ function getLTPoSh() {
 	return extensionContext.settingValues.PathToLTPoSh;
 }
 function getAutomateDiagnosticsURL() {
-	return extensionContext.baseUrl + "AutomateDiagnostics.ps1"
+	return extensionContext.settingValues.PathToDiag;
 }
 
 SC.event.addGlobalHandler(SC.event.QueryCommandButtons, function (eventArgs) {
@@ -162,11 +162,6 @@ function displayDiagnosticInformation(latestDiagnosticEvent, baseTime) {
 }
 
 function parseJson(eventData) {
-	//var lines=eventData.split('\n');
-	//var json_text = "";
-	//for(var i=3;i<lines.length;i++){
-	//	json_text = json_text + "\n" + lines[i];
-	//}
 	var json = JSON.parse(eventData);
 	console.log(json);
 	return json;
@@ -174,46 +169,61 @@ function parseJson(eventData) {
 
 
 function displayDataJson(json) {
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'server_row'});
-	SC.ui.addElement($('server_row'), 'th', {id: 'server_hdr', innerHTML: 'Server Address'});
-	SC.ui.addElement($('server_row'), 'td', {id: 'server', innerHTML: json["server_addr"], colspan: 2});
-
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'agent_id_row'});
-	SC.ui.addElement($('agent_id_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Agent ID'});
-	SC.ui.addElement($('agent_id_row'), 'td', {id: 'agent_id', innerHTML: json["id"]});
-
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'update_row'});
-	SC.ui.addElement($('update_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Update Check'});
-	SC.ui.addElement($('update_row'), 'td', {id: 'agent_id', innerHTML: json["update"], colspan: 2});
-
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'status_row'});
-	SC.ui.addElement($('status_row'), 'th', {id: 'status_hdr', innerHTML: 'Checkin Health'});
-	SC.ui.addElement($('status_row'), 'td', {id: 'status', innerHTML: (json["online"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>"});
-
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'status_row2'});
-	SC.ui.addElement($('status_row2'), 'th', {id: 'status_hdr2', innerHTML: 'Heartbeat Health'});
-	SC.ui.addElement($('status_row2'), 'td', {id: 'status2', innerHTML: (json["heartbeat"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>"});
-	
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'ltsvc_row'});
-	SC.ui.addElement($('ltsvc_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'SVC - LTService'});
-	SC.ui.addElement($('ltsvc_row'), 'td', {id: 'ltsvc', innerHTML: json["svc_ltservice"]["Status"] + " | " + json["svc_ltservice"]["Start Mode"]});
-
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'ltsvcmon_row'});
-	SC.ui.addElement($('ltsvcmon_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'SVC - LTSVCMon'});
-	SC.ui.addElement($('ltsvcmon_row'), 'td', {id: 'ltsvc', innerHTML: json["svc_ltsvcmon"]["Status"] + " | " + json["svc_ltsvcmon"]["Start Mode"]});
-
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'last_contact_row'});
-	SC.ui.addElement($('last_contact_row'), 'th', {id: 'last_contact_hdr', innerHTML: 'Last Contact'});
-	SC.ui.addElement($('last_contact_row'), 'td', {id: 'last_contact', innerHTML: json["lastcontact"], colspan: 2});
-
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'heartbeat_sent_row'});
-	SC.ui.addElement($('heartbeat_sent_row'), 'th', {id: 'heartbeat_sent_hdr', innerHTML: 'Heartbeat Sent'});
-	SC.ui.addElement($('heartbeat_sent_row'), 'td', {id: 'heartbeat_sent', innerHTML: json["heartbeat_sent"], colspan: 2});
-
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'heartbeat_rcv_row'});
-	SC.ui.addElement($('heartbeat_rcv_row'), 'th', {id: 'heartbeat_rcv_hdr', innerHTML: 'Heartbeat Received'});
-	SC.ui.addElement($('heartbeat_rcv_row'), 'td', {id: 'heartbeat_rcv', innerHTML: json["heartbeat_rcv"], colspan: 2});
-
+	if ("ltposh_loaded" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltposh_row'});
+		SC.ui.addElement($('server_row'), 'th', {id: 'ltposh_hdr', innerHTML: 'LTPosh Loaded'});
+		SC.ui.addElement($('status_row'), 'td', {id: 'status', innerHTML: (json["ltposh_loaded"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>"});
+	}
+	if ("server_addr" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'server_row'});
+		SC.ui.addElement($('server_row'), 'th', {id: 'server_hdr', innerHTML: 'Server Check'});
+		SC.ui.addElement($('server_row'), 'td', {id: 'server', innerHTML: json["server_addr"], colspan: 2});
+	}
+	if ("id" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'agent_id_row'});
+		SC.ui.addElement($('agent_id_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Agent ID'});
+		SC.ui.addElement($('agent_id_row'), 'td', {id: 'agent_id', innerHTML: json["id"]});
+	}
+	if ("update" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'update_row'});
+		SC.ui.addElement($('update_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Update Check'});
+		SC.ui.addElement($('update_row'), 'td', {id: 'agent_id', innerHTML: json["update"], colspan: 2});
+	}
+	if ("online" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'status_row'});
+		SC.ui.addElement($('status_row'), 'th', {id: 'status_hdr', innerHTML: 'Checkin Health'});
+		SC.ui.addElement($('status_row'), 'td', {id: 'status', innerHTML: (json["online"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>"});
+	}
+	if ("heartbeat" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'status_row2'});
+		SC.ui.addElement($('status_row2'), 'th', {id: 'status_hdr2', innerHTML: 'Heartbeat Health'});
+		SC.ui.addElement($('status_row2'), 'td', {id: 'status2', innerHTML: (json["heartbeat"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>"});
+	}
+	if ("svc_ltservice" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltsvc_row'});
+		SC.ui.addElement($('ltsvc_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'SVC - LTService'});
+		SC.ui.addElement($('ltsvc_row'), 'td', {id: 'ltsvc', innerHTML: json["svc_ltservice"]["Status"] + " | " + json["svc_ltservice"]["Start Mode"] + " | " + json["svc_ltservice"]["StartName"]});
+	}
+	if ("svc_ltsvcmon" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltsvcmon_row'});
+		SC.ui.addElement($('ltsvcmon_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'SVC - LTSVCMon'});
+		SC.ui.addElement($('ltsvcmon_row'), 'td', {id: 'ltsvc', innerHTML: json["svc_ltsvcmon"]["Status"] + " | " + json["svc_ltsvcmon"]["Start Mode"] + " | " + json["svc_ltsvcmon"]["StartName"]});
+	}
+	if ("lastcontact" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'last_contact_row'});
+		SC.ui.addElement($('last_contact_row'), 'th', {id: 'last_contact_hdr', innerHTML: 'Last Contact'});
+		SC.ui.addElement($('last_contact_row'), 'td', {id: 'last_contact', innerHTML: json["lastcontact"], colspan: 2});
+	}
+	if ("heartbeat_sent" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'heartbeat_sent_row'});
+		SC.ui.addElement($('heartbeat_sent_row'), 'th', {id: 'heartbeat_sent_hdr', innerHTML: 'Heartbeat Sent'});
+		SC.ui.addElement($('heartbeat_sent_row'), 'td', {id: 'heartbeat_sent', innerHTML: json["heartbeat_sent"], colspan: 2});
+	}
+	if ("heartbeat_rcv" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'heartbeat_rcv_row'});
+		SC.ui.addElement($('heartbeat_rcv_row'), 'th', {id: 'heartbeat_rcv_hdr', innerHTML: 'Heartbeat Received'});
+		SC.ui.addElement($('heartbeat_rcv_row'), 'td', {id: 'heartbeat_rcv', innerHTML: json["heartbeat_rcv"], colspan: 2});
+	}
 }
 
 function isUsingInternetExplorerOrEdge() {
@@ -253,17 +263,7 @@ function timeDifference(current, previous) {
 function getDiagnosticCommandText(headers) {
 	switch (headers.Processor + '/' + headers.Interface + '/' + headers.ContentType + '/' + headers.DiagnosticType)
 	{
-		case "ps/powershell/json/Automate": return "(new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex\r\nStart-AutomateDiagnostics -ltposh '"+getLTPoSh()+"'";
-		
-		/*case "sh/linux/text/Processes": return "ps -eo \"%U,%p,%x,%C,%c\"";
-		case "sh/linux/text/EventLog": return "echo " + headers.DiagnosticType + " ; dmesg -T | tail -" + getValidEventLogCount();
-		case "sh/linux/text/Services": return "echo " + headers.DiagnosticType + " ; ls /etc/init.d";
-		case "sh/linux/text/Software": return "echo " + headers.DiagnosticType + " ; dpkg --get-selections";
-		
-		case "sh/osx/text/Processes": return "ps -eo \"pid,%cpu,command\"";
-		case "sh/osx/text/EventLog": return "echo " + headers.DiagnosticType + " ; syslog -C";
-		case "sh/osx/text/Services": return "echo " + headers.DiagnosticType + " ; launchctl list";
-		case "sh/osx/text/Software": return "echo " + headers.DiagnosticType + " ; ls /Applications";*/
+		case "ps/powershell/json/Automate": return "Try {(new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex\r\nStart-AutomateDiagnostics -ltposh '"+getLTPoSh()+"'} Catch { Write-Host 'Error downloading AutomateDiagnostics' }";
     	default: throw "unknown os";
 	}
 }

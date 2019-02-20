@@ -14,7 +14,7 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					var sessionDetails = SessionManagerPool.Demux.GetSessionDetails(sessionEventTriggerEvent.Session.SessionID);
 
                     var ltposh = ExtensionContext.Current.GetSettingValue("PathToLTPoSh");
-                    var diag = "https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.ps1";
+					var diag = ExtensionContext.Current.GetSettingValue("PathToDiag");
 					var command = "#!ps\n#maxlength=100000\n#timeout=300000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n(new-object Net.WebClient).DownloadString('"+diag+"') | iex\r\nStart-AutomateDiagnostics -ltposh '"+ltposh+"'";
 
 					SessionManagerPool.Demux.AddSessionEvent(

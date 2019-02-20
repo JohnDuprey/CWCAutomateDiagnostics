@@ -14,5 +14,9 @@
 			<Description>The URL for launching LTPoSH (Defaults to http://bit.ly/LTPoSh).</Description>
 			<DefaultValue>http://bit.ly/LTPoSh</DefaultValue>
 		</Setting>
+		<Setting Name="PathToDiag" IsServerOnly="false">
+			<Description>The URL for launching AutomateDiagnostics (Defaults to https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.ps1).</Description>
+			<DefaultValue>https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.ps1</DefaultValue>
+		</Setting>
 	</Settings>
 </ExtensionManifest>
