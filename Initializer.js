@@ -171,8 +171,8 @@ function parseJson(eventData) {
 function displayDataJson(json) {
 	if ("ltposh_loaded" in json) {
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltposh_row'});
-		SC.ui.addElement($('server_row'), 'th', {id: 'ltposh_hdr', innerHTML: 'LTPosh Loaded'});
-		SC.ui.addElement($('status_row'), 'td', {id: 'status', innerHTML: (json["ltposh_loaded"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>"});
+		SC.ui.addElement($('ltposh_row'), 'th', {id: 'ltposh_hdr', innerHTML: 'LTPosh Loaded'});
+		SC.ui.addElement($('ltposh_row'), 'td', {id: 'ltposh', innerHTML: (json["ltposh_loaded"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>"});
 	}
 	if ("server_addr" in json) {
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'server_row'});
@@ -202,12 +202,12 @@ function displayDataJson(json) {
 	if ("svc_ltservice" in json) {
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltsvc_row'});
 		SC.ui.addElement($('ltsvc_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'SVC - LTService'});
-		SC.ui.addElement($('ltsvc_row'), 'td', {id: 'ltsvc', innerHTML: json["svc_ltservice"]["Status"] + " | " + json["svc_ltservice"]["Start Mode"] + " | " + json["svc_ltservice"]["StartName"]});
+		SC.ui.addElement($('ltsvc_row'), 'td', {id: 'ltsvc', innerHTML: json["svc_ltservice"]["Status"] + " | " + json["svc_ltservice"]["Start Mode"] + " | " + json["svc_ltservice"]["User"]});
 	}
 	if ("svc_ltsvcmon" in json) {
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltsvcmon_row'});
 		SC.ui.addElement($('ltsvcmon_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'SVC - LTSVCMon'});
-		SC.ui.addElement($('ltsvcmon_row'), 'td', {id: 'ltsvc', innerHTML: json["svc_ltsvcmon"]["Status"] + " | " + json["svc_ltsvcmon"]["Start Mode"] + " | " + json["svc_ltsvcmon"]["StartName"]});
+		SC.ui.addElement($('ltsvcmon_row'), 'td', {id: 'ltsvc', innerHTML: json["svc_ltsvcmon"]["Status"] + " | " + json["svc_ltsvcmon"]["Start Mode"] + " | " + json["svc_ltsvcmon"]["User"]});
 	}
 	if ("lastcontact" in json) {
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'last_contact_row'});

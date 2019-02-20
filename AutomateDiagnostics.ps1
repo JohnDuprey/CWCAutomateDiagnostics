@@ -265,7 +265,7 @@ Function Start-AutomateDiagnostics {
 	(new-object Net.WebClient).DownloadString($ltposh) | iex
 
     Try {
-        Get-Command -ListImported -Name Get-LTServiceInfo
+        $ltsvcinfo = Get-Command -ListImported -Name Get-LTServiceInfo
         $ltposh_loaded = $true
     }
     Catch {
