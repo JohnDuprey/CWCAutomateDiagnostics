@@ -87,7 +87,7 @@ SC.event.addGlobalHandler(SC.event.PreRender, function (eventArgs) {
 
 		SC.service.GetSessionGroups(function (sessionGroups) {
 			for (var sessionTypesAsString = ['Sessions', 'Meetings', 'Machines'], sessionType = 0 ; sessionType < sessionTypesAsString.length; sessionType++) {
-				var name = "All " + sessionTypesAsString[sessionType] + " by " + SC.res['Diagnostics.Automate.VersionLabel'];
+				var name = "All " + sessionTypesAsString[sessionType] + " by CWA Version";
 
 				if (!sessionGroups.find(function (session) { return session.Name === name })) {
 					sessionGroups.push({

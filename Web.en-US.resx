@@ -22,6 +22,6 @@
     <value>Last Updated: </value>
   </data>
   <data name="Diagnostics.Automate.VersionLabel" xml:space="preserve">
-    <value>CWA Version</value>
+    <value>CWA Version:</value>
   </data>
 </root>

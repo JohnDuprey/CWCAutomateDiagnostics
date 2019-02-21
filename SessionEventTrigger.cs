@@ -38,31 +38,38 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 				{
 					var sessionDetails = SessionManagerPool.Demux.GetSessionDetails(sessionEventTriggerEvent.Session.SessionID);
                     string output = sessionEventTriggerEvent.SessionEvent.Data;
-					if (isDiagnosticContent(output) && Regex.Match("DiagnosticType: Automate",output).Success) {
-						string pattern = @"!---BEGIN JSON---!(.+)$";
-						MatchCollection matches = Regex.Matches(output, pattern);
-						foreach (Match match in matches) {
-							DiagOutput diag = Deserialize(match.Value.ToString());
-							string version = diag.version;
-							var session = sessionEventTriggerEvent.Session;
-							session.CustomPropertyValues[6] = version;
-							SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, session.Name, session.IsPublic, session.Code, session.CustomPropertyValues);
-						}
+					var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
+					if (data[1] != "") {
+						DiagOutput diag = Deserialize(data[1]);
+						string version = diag.version;
+						var session = sessionEventTriggerEvent.Session;
+						session.CustomPropertyValues[6] = version;
+						SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, session.Name, session.IsPublic, session.Code, session.CustomPropertyValues);
 					}
 				};
 		}
 		return null;
 	}
-	private bool isDiagnosticContent(string eventData) {
-		return Regex.Match("DIAGNOSTIC-RESPONSE/1",eventData).Success;
-	}
+	
 	public DiagOutput Deserialize(string json) {
-            DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(DiagOutput));
-            using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(json)))
-            {
-                return ser.ReadObject(ms) as DiagOutput;
+        DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(DiagOutput));
+        using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(json))) {
+        	return ser.ReadObject(ms) as DiagOutput;
+        }
+    }
+
+    private static string FormatMessage(string message) {
+        DateTime now = DateTime.Now;
+        return string.Format("{0}: {1}", now.ToString(), message);
+    }
+	public static void WriteLog(string message) {
+        try {
+            using (StreamWriter streamWriter = new StreamWriter(string.Concat(Environment.ExpandEnvironmentVariables("%windir%"), "\\temp\\AutomateDiagnostics.log"), true)) {
+                streamWriter.WriteLine(FormatMessage(message));
             }
         }
+        catch {}
+    }
 }
 
 public class DiagOutput
