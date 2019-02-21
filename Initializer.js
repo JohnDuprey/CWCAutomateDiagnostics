@@ -78,6 +78,31 @@ SC.event.addGlobalHandler(SC.event.ExecuteCommand, function (eventArgs) {
 	}
 });
 
+SC.event.addGlobalHandler(SC.event.PreRender, function (eventArgs) {
+	if (!extensionContext.settingValues.createdVersionSessionGroup) {
+		SC.service.NotifyCreatedVersionSessionGroup();
+		SC.service.SetVersionCustomProperties(function () {
+			SC.pagedata.notifyDirty();
+		});
+
+		SC.service.GetSessionGroups(function (sessionGroups) {
+			for (var sessionTypesAsString = ['Sessions', 'Meetings', 'Machines'], sessionType = 0 ; sessionType < sessionTypesAsString.length; sessionType++) {
+				var name = "All " + sessionTypesAsString[sessionType] + " by " + SC.res['Diagnostics.Automate.VersionLabel'];
+
+				if (!sessionGroups.find(function (session) { return session.Name === name })) {
+					sessionGroups.push({
+						Name: name,
+						SessionFilter: "NOT CustomProperty7 = ''",
+						SessionType: sessionType,
+						SubgroupExpressions: 'CustomProperty7'
+					});
+				}
+			}
+
+			SC.service.SaveSessionGroups(sessionGroups);
+		});
+	}
+});
 
 function getInputCommand(diagnosticType, operatingSystem) {
 	var headers = getHeaders(operatingSystem);

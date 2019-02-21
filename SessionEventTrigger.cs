@@ -1,8 +1,13 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
+using System.Text;
 using ScreenConnect;
 using System.Linq;
-
+using System.Collections;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.Text.RegularExpressions;
 public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 {
 	public Proc GetDeferredActionIfApplicable(SessionEventTriggerEvent sessionEventTriggerEvent)
@@ -28,6 +33,64 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					);
 				};
 		}
+		else if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.RanCommand) {
+			return (Proc)delegate
+				{
+					var sessionDetails = SessionManagerPool.Demux.GetSessionDetails(sessionEventTriggerEvent.Session.SessionID);
+                    string output = sessionEventTriggerEvent.SessionEvent.Data;
+					if (isDiagnosticContent(output) && Regex.Match("DiagnosticType: Automate",output).Success) {
+						string pattern = @"!---BEGIN JSON---!(.+)$";
+						MatchCollection matches = Regex.Matches(output, pattern);
+						foreach (Match match in matches) {
+							DiagOutput diag = Deserialize(match.Value.ToString());
+							string version = diag.version;
+							var session = sessionEventTriggerEvent.Session;
+							session.CustomPropertyValues[6] = version;
+							SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, session.Name, session.IsPublic, session.Code, session.CustomPropertyValues);
+						}
+					}
+				};
+		}
 		return null;
 	}
+	private bool isDiagnosticContent(string eventData) {
+		return Regex.Match("DIAGNOSTIC-RESPONSE/1",eventData).Success;
+	}
+	public DiagOutput Deserialize(string json) {
+            DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(DiagOutput));
+            using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(json)))
+            {
+                return ser.ReadObject(ms) as DiagOutput;
+            }
+        }
+}
+
+public class DiagOutput
+{
+    [DataMember(Name="id", IsRequired=false)]
+    public String id;
+
+    [DataMember(Name = "version", IsRequired = false)]
+    public String version;
+
+    [DataMember(Name = "server_addr", IsRequired = false)]
+    public String server_addr;
+
+    [DataMember(Name = "online", IsRequired = false)]
+    public Boolean online;
+
+    [DataMember(Name = "heartbeat", IsRequired = false)]
+    public Boolean heartbeat;
+
+    [DataMember(Name = "lastcontact", IsRequired = false)]
+    public String lastcontact;
+
+    [DataMember(Name = "heartbeat_sent", IsRequired = false)]
+    public String heartbeat_sent;
+
+    [DataMember(Name = "heartbeat_rcv", IsRequired = false)]
+    public String heartbeat_rcv;
+
+    [DataMember(Name = "ltposh_loaded", IsRequired = true)]
+    public Boolean ltposh_loaded;
 }
