@@ -1,12 +1,7 @@
 # WMI Service check and start/auto
 Function serviceCheck($service){
 	$svc_info = Get-WmiObject win32_service | where-object {$_.name -eq $service}
-	if ($svc_info.State -eq 'Stopped') { Start-Service $service; $state_check = 'Previously Stopped, starting service now' -f $service }
-	elseif ($svc_info.state -eq 'Running') { $state_check = 'Running' -f $service }
-	
-	if ($svc_info.StartMode -eq 'Auto') { $start_check = 'Automatic' }
-	else { $svc_info.ChangeStartMode('Auto'); $start_check = 'Previously set to {0} changed to Auto' -f $svc_info.StartMode }
-	@{'Status' = $state_check; 'Start Mode' = $start_check; 'User' = $svc_info.StartName}
+	@{'Status' = $svc_info.State; 'Start Mode' = $svc_info.StartMode; 'User' = $svc_info.StartName}
 }
 
 # Check PS Version
@@ -22,7 +17,12 @@ function Escape-JSONString($str){
 }
 
 function extractHostname($url) {
-	([System.Uri]"$url").Authority
+    if ($url -eq "") {
+        $false
+    }
+    else {
+	    ([System.Uri]"$url").Authority
+    }
 }
 
 # Author: Joakim Borger Svendsen, 2017. http://www.json.org
@@ -278,32 +278,53 @@ Function Start-AutomateDiagnostics {
 
     if ($ltposh_loaded) {
 	    # Get ltservice info
-	    $info = Get-LTServiceInfo
+        $info = Get-LTServiceInfo
+        
+        # If services are stopped, use Restart-LTService to get them working again
+        if ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped") {
+            Restart-LTService -Confirm:$false
+            Start-Sleep -Seconds 10
+            $info = Get-LTServiceInfo
+            $ltservice_check = serviceCheck('LTService')
+            $ltsvcmon_check = serviceCheck('LTSVCMon')
+        
+        }
+
+        # Get checkin / heartbeat times to DateTime
 	    $lastsuccess = Get-Date $info.LastSuccessStatus
 	    $lasthbsent = Get-Date $info.HeartbeatLastSent
 	    $lasthbrcv = Get-Date $info.HeartbeatLastReceived
 
 	    # Check online and heartbeat statuses
 	    $online_threshold = (Get-Date).AddMinutes(-5)
-	    $heartbeat_threshold = (Get-Date).AddMinutes(-5)
+        $heartbeat_threshold = (Get-Date).AddMinutes(-5)
+        
+        # Split server list
 	    $servers = ($info.'Server Address').Split('|')
 	    $online = $lastsuccess -ge $online_threshold
 	    $heartbeat_rcv = $lasthbrcv -ge $heartbeat_threshold 
 	    $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
-	    $heartbeat = $heartbeat_rcv -or $heartbeat_snd
+        $heartbeat = $heartbeat_rcv -or $heartbeat_snd
+
 
 	    # Get server list
 	    $server_test = $false
 	    foreach ($server in $servers) {
-    		$hostname = extractHostname($server)
-		    $conn_test = Test-Connection $hostname
-		    $ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
-		    $target_version = $ver_test.Split('|')[6]
-		    if ($conn_test -and $target_version -ne "") {
-    			$server_test = $true
-			    $server_msg = "$server passed all checks"
-			    break
-		    }
+            $hostname = extractHostname($server)
+            
+            if (!($hostname)) {
+                $server_msg = "Automate server not defined"
+            }
+            else {
+                $conn_test = Test-Connection $hostname
+                $ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
+                $target_version = $ver_test.Split('|')[6]
+                if ($conn_test -and $target_version -ne "") {
+                    $server_test = $true
+                    $server_msg = "$server passed all checks"
+                    break
+                }
+            }
 	    }
 	    if ($server_test -eq $false) {
     		$server_msg = "Error running Automate server tests"
