@@ -9,9 +9,16 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 - Provides custom Session Group that sorts endpoints by CWA version number.
 
 ## Installation
+- This extension has been submitted to ConnectWise for approval for the Marketplace
+
+### Manual Instructions
 1. Create a new directory for the extension - %programfiles(x86)%\ScreenConnect\App_Extensions\e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76
 2. Download the lastest master.zip and extract all files into the directory 
 3. Enable the extension in the administration page.
+
+## Setup
+1. In the settings, modify the LTposh URL to a URL that you trust or one that is configured to bypass content filters
+2. Additionally, find the Guid for the Control extension (https://control_url:port/App_Extensions/<extension_guid>/AutomateDiagnostics.ps1) and add that to the settings to avoid calling the script from GitHub.
 
 ## Usage
 - Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot). RanCommand events are parsed for JSON output and the version number is stored in CustomProperty7.
