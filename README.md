@@ -17,8 +17,9 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 3. Enable the extension in the administration page.
 
 ## Setup
-1. In the settings, modify the LTposh URL to a URL that you trust or one that is configured to bypass content filters
-2. Additionally, find the Guid for the Control extension (https://control_url:port/App_Extensions/<extension_guid>/AutomateDiagnostics.ps1) and add that to the settings to avoid calling the script from GitHub.
+1. In the settings, modify the PathToLTPoSh to a URL that you trust or one that is configured to bypass content filters
+2. Additionally, find the Guid for the Control extension (manual one is listed above, cloud should be 26a42e0d-6233-4a66-9575-6e05a248cd26 one it's added to the marketplace)
+3. Build the URL with the extension Guid and add that to the settings to avoid calling the script from GitHub. (e.g https://control_url:port/App_Extensions/<extension_guid>/AutomateDiagnostics.ps1)
 
 ## Usage
 - Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot). RanCommand events are parsed for JSON output and the version number is stored in CustomProperty7.
