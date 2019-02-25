@@ -15,7 +15,7 @@ SC.event.addGlobalHandler(SC.event.QueryCommandButtons, function (eventArgs) {
 	switch (eventArgs.area) {
 		case 'HostDetailTabList':
 			eventArgs.buttonDefinitions.push(
-				{commandName: 'Select', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.Label'], imageUrl: extensionContext.baseUrl + 'Images/Automate.png'}
+				{commandName: 'Select', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.Label'], imageUrl: extensionContext.baseUrl + 'Automate.png'}
 			);
 			break;
 		case 'AutomateButtons':eventArgs.buttonDefinitions.push({commandName: 'GetInfo', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.Button']});
