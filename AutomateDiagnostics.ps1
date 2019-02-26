@@ -277,101 +277,110 @@ Function Start-AutomateDiagnostics {
     $ltsvcmon_check = serviceCheck('LTSVCMon')
 
     if ($ltposh_loaded) {
-	    # Get ltservice info
-        $info = Get-LTServiceInfo
-        
-        # Get checkin / heartbeat times to DateTime
-	    $lastsuccess = Get-Date $info.LastSuccessStatus
-	    $lasthbsent = Get-Date $info.HeartbeatLastSent
-	    $lasthbrcv = Get-Date $info.HeartbeatLastReceived
-
-	    # Check online and heartbeat statuses
-	    $online_threshold = (Get-Date).AddMinutes(-5)
-        $heartbeat_threshold = (Get-Date).AddMinutes(-5)
-        
-        # Split server list
-	    $servers = ($info.'Server Address').Split('|')
-	    $online = $lastsuccess -ge $online_threshold
-	    $heartbeat_rcv = $lasthbrcv -ge $heartbeat_threshold 
-	    $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
-        $heartbeat = $heartbeat_rcv -or $heartbeat_snd
-
-        # If services are stopped, use Restart-LTService to get them working again
-        If ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped" -or !($heartbeat) -or !($online)) {
-            Restart-LTService -Confirm:$false
-            Start-Sleep -Seconds 30
+        # Get ltservice info
+        try {
             $info = Get-LTServiceInfo
-            $ltservice_check = serviceCheck('LTService')
-            $ltsvcmon_check = serviceCheck('LTSVCMon')
-             # Get checkin / heartbeat times to DateTime
+
+            # Get checkin / heartbeat times to DateTime
 	        $lastsuccess = Get-Date $info.LastSuccessStatus
 	        $lasthbsent = Get-Date $info.HeartbeatLastSent
-            $lasthbrcv = Get-Date $info.HeartbeatLastReceived
+	        $lasthbrcv = Get-Date $info.HeartbeatLastReceived
+
+            # Check online and heartbeat statuses
+            $online_threshold = (Get-Date).AddMinutes(-5)
+            $heartbeat_threshold = (Get-Date).AddMinutes(-5)
+            
+            # Split server list
+            $servers = ($info.'Server Address').Split('|')
             $online = $lastsuccess -ge $online_threshold
             $heartbeat_rcv = $lasthbrcv -ge $heartbeat_threshold 
             $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
             $heartbeat = $heartbeat_rcv -or $heartbeat_snd
-        }
 
-	    # Get server list
-	    $server_test = $false
-	    foreach ($server in $servers) {
-            $hostname = extractHostname($server)
-            
-            if (!($hostname) -or $hostname -eq "" -or $null -eq $hostname) {
-                $server_msg = "Automate server not defined"
+            # If services are stopped, use Restart-LTService to get them working again
+            If ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped" -or !($heartbeat) -or !($online)) {
+                Restart-LTService -Confirm:$false
+                Start-Sleep -Seconds 30
+                $info = Get-LTServiceInfo
+                $ltservice_check = serviceCheck('LTService')
+                $ltsvcmon_check = serviceCheck('LTSVCMon')
+                # Get checkin / heartbeat times to DateTime
+                $lastsuccess = Get-Date $info.LastSuccessStatus
+                $lasthbsent = Get-Date $info.HeartbeatLastSent
+                $lasthbrcv = Get-Date $info.HeartbeatLastReceived
+                $online = $lastsuccess -ge $online_threshold
+                $heartbeat_rcv = $lasthbrcv -ge $heartbeat_threshold 
+                $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
+                $heartbeat = $heartbeat_rcv -or $heartbeat_snd
             }
-            else {
-                $conn_test = Test-Connection $hostname
-                $ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
-                $target_version = $ver_test.Split('|')[6]
-                if ($conn_test -and $target_version -ne "") {
-                    $server_test = $true
-                    $server_msg = "$server passed all checks"
-                    break
+
+            # Get server list
+            $server_test = $false
+            foreach ($server in $servers) {
+                $hostname = extractHostname($server)
+                
+                if (!($hostname) -or $hostname -eq "" -or $null -eq $hostname) {
+                    $server_msg = "Automate server not defined"
+                }
+                else {
+                    $conn_test = Test-Connection $hostname
+                    $ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
+                    $target_version = $ver_test.Split('|')[6]
+                    if ($conn_test -and $target_version -ne "") {
+                        $server_test = $true
+                        $server_msg = "$server passed all checks"
+                        break
+                    }
                 }
             }
-	    }
-	    if ($server_test -eq $false) {
-    		$server_msg = "Error running Automate server tests"
-    	}
+            if ($server_test -eq $false) {
+                $server_msg = "Error running Automate server tests"
+            }
 
-    	# Check updates
-    	$updatedebug = ""
-    	$current_version = $info.Version
-    	if ($target_version -eq $info.Version) {
-		    $update_text = "No updates to install, on {0}" -f $info.Version
-	    }
-	    else {
-            taskkill /im ltsvc.exe /f
-            taskkill /im ltsvcmon.exe /f
-            taskkill /im lttray.exe /f
-            $results = Update-LTService -WarningVariable updatetest -WarningAction SilentlyContinue
-            Start-Sleep -Seconds 45
-            Start-Service LTService
-            Start-Service LTSvcMon
-		    $info = Get-LTServiceInfo
-		    if ([version]$info.Version -gt [version]$current_version) {
-    			$update_text = 'Updated from {1} to {0}' -f $info.Version,$current_version
+            # Check updates
+            $updatedebug = ""
+            $current_version = $info.Version
+            if ($target_version -eq $info.Version) {
+                $update_text = "No updates to install, on {0}" -f $info.Version
             }
             else {
-                $update_text = 'Error updating to {0}, still on {1}' -f $target_version,$info.Version
+                taskkill /im ltsvc.exe /f
+                taskkill /im ltsvcmon.exe /f
+                taskkill /im lttray.exe /f
+                $results = Update-LTService -WarningVariable updatetest -WarningAction SilentlyContinue
+                Start-Sleep -Seconds 45
+                Start-Service LTService
+                Start-Service LTSvcMon
+                $info = Get-LTServiceInfo
+                if ([version]$info.Version -gt [version]$current_version) {
+                    $update_text = 'Updated from {1} to {0}' -f $info.Version,$current_version
+                }
+                else {
+                    $update_text = 'Error updating to {0}, still on {1}' -f $target_version,$info.Version
+                }
             }
-	    }
-        # Collect diagnostic data into hashtable
-        $diag = @{
-            'id' = $info.id
-            'version' = $info.Version
-            'server_addr' = $server_msg
-            'online' = $online
-            'heartbeat' = $heartbeat
-            'update' = $update_text
-            'lastcontact'  = $info.LastSuccessStatus
-            'heartbeat_sent' = $info.HeartbeatLastSent
-            'heartbeat_rcv' = $info.HeartbeatLastReceived
-            'svc_ltservice' = $ltservice_check
-            'svc_ltsvcmon' = $ltsvcmon_check
-            'ltposh_loaded' = $ltposh_loaded
+            # Collect diagnostic data into hashtable
+            $diag = @{
+                'id' = $info.id
+                'version' = $info.Version
+                'server_addr' = $server_msg
+                'online' = $online
+                'heartbeat' = $heartbeat
+                'update' = $update_text
+                'lastcontact'  = $info.LastSuccessStatus
+                'heartbeat_sent' = $info.HeartbeatLastSent
+                'heartbeat_rcv' = $info.HeartbeatLastReceived
+                'svc_ltservice' = $ltservice_check
+                'svc_ltsvcmon' = $ltsvcmon_check
+                'ltposh_loaded' = $ltposh_loaded
+            }
+        }
+        catch {
+            $diag = @{
+                'ltposh_loaded' = $ltposh_loaded
+                'server_addr' = "Automate agent not detected"
+                'version' = '0.0'
+            }
         }
     }
     else {
