@@ -280,16 +280,6 @@ Function Start-AutomateDiagnostics {
 	    # Get ltservice info
         $info = Get-LTServiceInfo
         
-        # If services are stopped, use Restart-LTService to get them working again
-        if ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped") {
-            Restart-LTService -Confirm:$false
-            Start-Sleep -Seconds 10
-            $info = Get-LTServiceInfo
-            $ltservice_check = serviceCheck('LTService')
-            $ltsvcmon_check = serviceCheck('LTSVCMon')
-        
-        }
-
         # Get checkin / heartbeat times to DateTime
 	    $lastsuccess = Get-Date $info.LastSuccessStatus
 	    $lasthbsent = Get-Date $info.HeartbeatLastSent
@@ -306,13 +296,29 @@ Function Start-AutomateDiagnostics {
 	    $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
         $heartbeat = $heartbeat_rcv -or $heartbeat_snd
 
+        # If services are stopped, use Restart-LTService to get them working again
+        If ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped" -or !($heartbeat) -or !($online)) {
+            Restart-LTService -Confirm:$false
+            Start-Sleep -Seconds 30
+            $info = Get-LTServiceInfo
+            $ltservice_check = serviceCheck('LTService')
+            $ltsvcmon_check = serviceCheck('LTSVCMon')
+             # Get checkin / heartbeat times to DateTime
+	        $lastsuccess = Get-Date $info.LastSuccessStatus
+	        $lasthbsent = Get-Date $info.HeartbeatLastSent
+            $lasthbrcv = Get-Date $info.HeartbeatLastReceived
+            $online = $lastsuccess -ge $online_threshold
+            $heartbeat_rcv = $lasthbrcv -ge $heartbeat_threshold 
+            $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
+            $heartbeat = $heartbeat_rcv -or $heartbeat_snd
+        }
 
 	    # Get server list
 	    $server_test = $false
 	    foreach ($server in $servers) {
             $hostname = extractHostname($server)
             
-            if (!($hostname)) {
+            if (!($hostname) -or $hostname -eq "" -or $null -eq $hostname) {
                 $server_msg = "Automate server not defined"
             }
             else {
