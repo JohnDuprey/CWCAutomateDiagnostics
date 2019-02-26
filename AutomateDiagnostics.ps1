@@ -261,10 +261,9 @@ Function Start-AutomateDiagnostics {
     # Get powershell version
 	$psver = Get-PSVersion
     
-    # Invoke LTPosh
-	(new-object Net.WebClient).DownloadString($ltposh) | iex
-
     Try {
+        # Invoke LTPosh
+	    (new-object Net.WebClient).DownloadString($ltposh) | iex
         $ltsvcinfo = Get-Command -ListImported -Name Get-LTServiceInfo
         $ltposh_loaded = $true
     }
@@ -278,7 +277,7 @@ Function Start-AutomateDiagnostics {
 
     if ($ltposh_loaded) {
         # Get ltservice info
-        try {
+        Try {
             $info = Get-LTServiceInfo
 
             # Get checkin / heartbeat times to DateTime
@@ -375,7 +374,7 @@ Function Start-AutomateDiagnostics {
                 'ltposh_loaded' = $ltposh_loaded
             }
         }
-        catch {
+        Catch {
             $diag = @{
                 'ltposh_loaded' = $ltposh_loaded
                 'server_addr' = "Automate agent not detected"
