@@ -378,7 +378,7 @@ Function Start-AutomateDiagnostics {
             $diag = @{
                 'ltposh_loaded' = $ltposh_loaded
                 'server_addr' = "Automate agent not detected"
-                'version' = '0.0'
+                'version' = 'No Agent Installed'
             }
         }
     }
@@ -387,6 +387,7 @@ Function Start-AutomateDiagnostics {
             'svc_ltservice' = $ltservicecheck
             'svc_ltsvcmon' = $ltsvcmon_check
             'ltposh_loaded' = $ltposh_loaded
+            'version' = 'Error loading LTPosh'
         }
     }
 	Write-Output "!---BEGIN JSON---!"

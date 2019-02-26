@@ -18,6 +18,8 @@ SC.event.addGlobalHandler(SC.event.QueryCommandButtons, function (eventArgs) {
 				{commandName: 'Select', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.Label'], imageUrl: extensionContext.baseUrl + 'Automate.png'}
 			);
 			break;
+		case 'HostDetailPopoutPanel':eventArgs.buttonDefinitions.push({commandName: 'GetInfoPer', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.Button']});
+			break;
 		case 'AutomateButtons':eventArgs.buttonDefinitions.push({commandName: 'GetInfo', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.Button']});
 			break;
 	}
@@ -69,6 +71,26 @@ SC.event.addGlobalHandler(SC.event.ExecuteCommand, function (eventArgs) {
 				getInputCommand(
 					eventArgs.commandArgument.type, 
 					eventArgs.commandArgument.operatingSystemName
+					),
+				false,
+				false,
+				true
+			);
+			break;
+		case 'GetInfoPer':
+			var checkedOrSelectedRows = Array.prototype.filter.call(($('detailTable') || $('.DetailTable')).rows, function (r) { return SC.ui.isChecked(r) || SC.ui.isSelected(r); });
+			var checkedOrSelectedSessions = Array.prototype.map.call(checkedOrSelectedRows, function (r) { return r._dataItem; });
+			var sessionType = checkedOrSelectedSessions[0].SessionType === undefined ? SC.types.SessionTypes.Access : checkedOrSelectedSessions[0].SessionType;
+			var windowsSessionIDs = Array.prototype.map.call(checkedOrSelectedSessions, function (s) { if (s.GuestOperatingSystemName.includes("Windows")) return s.SessionID; }).filter(function(s){return s !== undefined});
+			window.addEventToSessions(
+				window.getSessionGroupUrlPart()[0], 
+				SC.types.SessionType.Access,
+				windowsSessionIDs, 
+				SC.types.SessionEventType.QueuedCommand, 
+				null,
+				getInputCommand(
+					'Automate', 
+					'Windows'
 					),
 				false,
 				false,
@@ -288,7 +310,7 @@ function timeDifference(current, previous) {
 function getDiagnosticCommandText(headers) {
 	switch (headers.Processor + '/' + headers.Interface + '/' + headers.ContentType + '/' + headers.DiagnosticType)
 	{
-		case "ps/powershell/json/Automate": return "Try {(new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex\r\nStart-AutomateDiagnostics -ltposh '"+getLTPoSh()+"'} Catch { Write-Host 'Error downloading AutomateDiagnostics' }";
+		case "ps/powershell/json/Automate": return "Try {(new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex\r\nStart-AutomateDiagnostics -ltposh '"+getLTPoSh()+"'} Catch { Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error downloading AutomateDiagnostics\"}' }";
     	default: throw "unknown os";
 	}
 }
