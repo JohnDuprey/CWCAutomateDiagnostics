@@ -20,8 +20,7 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					if (sessionDetails.Session.SessionType == SessionType.Access) {
 						var ltposh = ExtensionContext.Current.GetSettingValue("PathToLTPoSh");
 						var diag = ExtensionContext.Current.GetSettingValue("PathToDiag");
-						var command = "#!ps\n#maxlength=100000\n#timeout=300000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n(new-object Net.WebClient).DownloadString('"+diag+"') | iex\r\nStart-AutomateDiagnostics -ltposh '"+ltposh+"'";
-
+						var command = "#!ps\n#maxlength=100000\n#timeout=300000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\nTry { Try {[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; } Catch {}; (new-object Net.WebClient).DownloadString('"+ diag +"') | iex\r\nStart-AutomateDiagnostics -ltposh '"+ ltposh +"'} Catch { Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
 						SessionManagerPool.Demux.AddSessionEvent(
 							sessionEventTriggerEvent.Session.SessionID,
 							new SessionEvent

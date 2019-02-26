@@ -1,7 +1,25 @@
+If ($env:PROCESSOR_ARCHITEW6432 -match '64' -and [IntPtr]::Size -ne 8) {
+    Write-Warning '32-bit PowerShell session detected on 64-bit OS. Attempting to launch 64-Bit session to process commands.'
+    If ($myInvocation.Line) {
+        &"$env:WINDIR\sysnative\windowspowershell\v1.0\powershell.exe" -NonInteractive -NoProfile $myInvocation.Line
+    } Elseif ($myInvocation.InvocationName) {
+        &"$env:WINDIR\sysnative\windowspowershell\v1.0\powershell.exe" -NonInteractive -NoProfile -File "$($myInvocation.InvocationName)" $args
+    } Else {
+        &"$env:WINDIR\sysnative\windowspowershell\v1.0\powershell.exe" -NonInteractive -NoProfile $myInvocation.MyCommand
+    }
+    Write-Warning 'Exiting 64-bit session. Module will only remain loaded in native 64-bit PowerShell environment.'
+Exit $lastexitcode
+}#End If
+
 # WMI Service check and start/auto
 Function serviceCheck($service){
-	$svc_info = Get-WmiObject win32_service | where-object {$_.name -eq $service}
-	@{'Status' = $svc_info.State; 'Start Mode' = $svc_info.StartMode; 'User' = $svc_info.StartName}
+    Try {
+	    $svc_info = Get-WmiObject win32_service | where-object {$_.name -eq $service}
+        @{'Status' = $svc_info.State; 'Start Mode' = $svc_info.StartMode; 'User' = $svc_info.StartName}
+    }
+    Catch {
+        @{'Status' = 'Not Detected'; 'Start Mode' = ""; 'User' = ""}
+    }
 }
 
 # Check PS Version
@@ -298,7 +316,7 @@ Function Start-AutomateDiagnostics {
 
             # If services are stopped, use Restart-LTService to get them working again
             If ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped" -or !($heartbeat) -or !($online)) {
-                Restart-LTService -Confirm:$false
+                Try { Restart-LTService -Confirm:$false } Catch {}
                 Start-Sleep -Seconds 30
                 $info = Get-LTServiceInfo
                 $ltservice_check = serviceCheck('LTService')
@@ -319,20 +337,28 @@ Function Start-AutomateDiagnostics {
                 $hostname = extractHostname($server)
                 
                 if (!($hostname) -or $hostname -eq "" -or $null -eq $hostname) {
-                    $server_msg = "Automate server not defined"
+                    continue
                 }
                 else {
-                    $conn_test = Test-Connection $hostname
-                    $ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
-                    $target_version = $ver_test.Split('|')[6]
-                    if ($conn_test -and $target_version -ne "") {
-                        $server_test = $true
-                        $server_msg = "$server passed all checks"
-                        break
+                    Try {
+                        $conn_test = Test-Connection $hostname
+                        $ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
+                        $target_version = $ver_test.Split('|')[6]
+                        if ($conn_test -and $target_version -ne "") {
+                            $server_test = $true
+                            $server_msg = "$server passed all checks"
+                            break
+                        }
+                    }
+                    Catch {
+                        continue
                     }
                 }
             }
-            if ($server_test -eq $false) {
+            if ($server_test -eq $false -and $servers.Count -eq 0) {
+                $server_msg = "No automate servers detected"
+            }
+            elseif ($server_test -eq $false -and $servers.Count -gt 0) {
                 $server_msg = "Error running Automate server tests"
             }
 
@@ -346,17 +372,23 @@ Function Start-AutomateDiagnostics {
                 taskkill /im ltsvc.exe /f
                 taskkill /im ltsvcmon.exe /f
                 taskkill /im lttray.exe /f
-                $results = Update-LTService -WarningVariable updatetest -WarningAction SilentlyContinue
-                Start-Sleep -Seconds 45
-                Start-Service LTService
-                Start-Service LTSvcMon
-                $info = Get-LTServiceInfo
-                if ([version]$info.Version -gt [version]$current_version) {
-                    $update_text = 'Updated from {1} to {0}' -f $info.Version,$current_version
+                Try {
+                    $results = Update-LTService -WarningVariable updatetest -WarningAction SilentlyContinue
+                    Start-Sleep -Seconds 60
+                    Start-Service LTService
+                    Start-Service LTSvcMon
+                    $info = Get-LTServiceInfo
+                    if ([version]$info.Version -gt [version]$current_version) {
+                        $update_text = 'Updated from {1} to {0}' -f $info.Version,$current_version
+                    }
+                    else {
+                        $update_text = 'Error updating to {0}, still on {1}' -f $target_version,$info.Version
+                    }
                 }
-                else {
-                    $update_text = 'Error updating to {0}, still on {1}' -f $target_version,$info.Version
+                Catch {
+                    $update_text = "Update-LTService failed to run"
                 }
+
             }
             # Collect diagnostic data into hashtable
             $diag = @{
@@ -366,6 +398,7 @@ Function Start-AutomateDiagnostics {
                 'online' = $online
                 'heartbeat' = $heartbeat
                 'update' = $update_text
+                'update_results' = $results
                 'lastcontact'  = $info.LastSuccessStatus
                 'heartbeat_sent' = $info.HeartbeatLastSent
                 'heartbeat_rcv' = $info.HeartbeatLastReceived

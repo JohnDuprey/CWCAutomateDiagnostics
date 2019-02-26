@@ -310,7 +310,7 @@ function timeDifference(current, previous) {
 function getDiagnosticCommandText(headers) {
 	switch (headers.Processor + '/' + headers.Interface + '/' + headers.ContentType + '/' + headers.DiagnosticType)
 	{
-		case "ps/powershell/json/Automate": return "Try {(new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex\r\nStart-AutomateDiagnostics -ltposh '"+getLTPoSh()+"'} Catch { Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error downloading AutomateDiagnostics\"}' }";
+		case "ps/powershell/json/Automate": return "Try { Try { [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; } Catch {}; (new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex\r\nStart-AutomateDiagnostics -ltposh '"+getLTPoSh()+"'} Catch { $_.Exception.Message; Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
     	default: throw "unknown os";
 	}
 }
