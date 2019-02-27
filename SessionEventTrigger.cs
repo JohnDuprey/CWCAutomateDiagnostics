@@ -20,7 +20,7 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					if (sessionDetails.Session.SessionType == SessionType.Access) {
 						var ltposh = ExtensionContext.Current.GetSettingValue("PathToLTPoSh");
 						var diag = ExtensionContext.Current.GetSettingValue("PathToDiag");
-						var command = "#!ps\n#maxlength=100000\n#timeout=300000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\nTry { Try {[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; } Catch {}; (new-object Net.WebClient).DownloadString('"+ diag +"') | iex\r\nStart-AutomateDiagnostics -ltposh '"+ ltposh +"'} Catch { Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
+						var command = "#!ps\n#maxlength=100000\n#timeout=300000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; Try { Try {[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; } Catch {}; (new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"'} Catch { Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
 						SessionManagerPool.Demux.AddSessionEvent(
 							sessionEventTriggerEvent.Session.SessionID,
 							new SessionEvent
@@ -41,9 +41,9 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
 					if (data[1] != "") {
 						DiagOutput diag = Deserialize(data[1]);
-						string version = diag.version;
 						var session = sessionEventTriggerEvent.Session;
-						session.CustomPropertyValues[6] = version;
+						session.CustomPropertyValues[6] = diag.version;
+						session.CustomPropertyValues[5] = diag.id;
 						SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, session.Name, session.IsPublic, session.Code, session.CustomPropertyValues);
 					}
 				};

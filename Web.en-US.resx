@@ -24,4 +24,7 @@
   <data name="Diagnostics.Automate.VersionLabel" xml:space="preserve">
     <value>CWA Version:</value>
   </data>
+    <data name="Diagnostics.Automate.IDLabel" xml:space="preserve">
+    <value>CWA ID:</value>
+  </data>
 </root>

@@ -26,6 +26,15 @@ public class Service : WebServiceBase
 					)
 				)
 			);
+			resourceManager.SaveResourceOverride("SessionProperty.Custom6." + resource, new Dictionary<string, string>() { { resource.Equals("LabelText") ? CultureInfo.CurrentCulture.Name : "InvariantCultureKey", 
+			resource.Equals("LabelText") ? WebResources.GetString("Diagnostics.Automate.IDLabel") : "true" } }
+				.Select(cultureKeyToOverrideValue =>
+					Extensions.CreateKeyValuePair(
+						cultureKeyToOverrideValue.Key == "InvariantCultureKey" ? CultureInfo.InvariantCulture : CultureInfo.GetCultureInfo(cultureKeyToOverrideValue.Key),
+						(object)cultureKeyToOverrideValue.Value
+					)
+				)
+			);
 		});
 
 		var version = 0L;

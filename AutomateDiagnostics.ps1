@@ -1,16 +1,3 @@
-If ($env:PROCESSOR_ARCHITEW6432 -match '64' -and [IntPtr]::Size -ne 8) {
-    Write-Warning '32-bit PowerShell session detected on 64-bit OS. Attempting to launch 64-Bit session to process commands.'
-    If ($myInvocation.Line) {
-        &"$env:WINDIR\sysnative\windowspowershell\v1.0\powershell.exe" -NonInteractive -NoProfile $myInvocation.Line
-    } Elseif ($myInvocation.InvocationName) {
-        &"$env:WINDIR\sysnative\windowspowershell\v1.0\powershell.exe" -NonInteractive -NoProfile -File "$($myInvocation.InvocationName)" $args
-    } Else {
-        &"$env:WINDIR\sysnative\windowspowershell\v1.0\powershell.exe" -NonInteractive -NoProfile $myInvocation.MyCommand
-    }
-    Write-Warning 'Exiting 64-bit session. Module will only remain loaded in native 64-bit PowerShell environment.'
-Exit $lastexitcode
-}#End If
-
 # WMI Service check and start/auto
 Function serviceCheck($service){
     Try {
@@ -287,6 +274,21 @@ Function Start-AutomateDiagnostics {
     }
     Catch {
         $ltposh_loaded = $false
+        $_.Exception.Message
+    }
+    
+    if ($ltposh_loaded -eq $false -and $ltposh -ne "http://bit.ly/LTPoSh") {
+        Try {
+            Write-Output "LTPosh failed to load, failing back to bit.ly link"
+            # Invoke LTPosh
+            (new-object Net.WebClient).DownloadString("http://bit.ly/LTPoSh") | iex
+            $ltsvcinfo = Get-Command -ListImported -Name Get-LTServiceInfo
+            $ltposh_loaded = $true
+        }
+        Catch {
+            $ltposh_loaded = $false
+            $_.Exception.Message
+        }
     }
 
 	# Check services

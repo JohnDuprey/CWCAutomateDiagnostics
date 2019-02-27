@@ -5,6 +5,7 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 - Forces agent updates using Update-LTService
 - Verifies LTService and LTSVCmon services are running and set to Automatic. Will start services and set StartMode to Automatic.
 - Verifies checkin and heartbeat times.
+- Stores the CWA Agent ID as CustomProperty6.
 - Stores the CWA Version as CustomProperty7.
 - Provides custom Session Group that sorts endpoints by CWA version number.
 
@@ -22,8 +23,8 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 3. Build the URL with the extension Guid and add that to the settings to avoid calling the script from GitHub. (e.g https://control_url:port/App_Extensions/<extension_guid>/AutomateDiagnostics.ps1)
 
 ## Usage
-- Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot). RanCommand events are parsed for JSON output and the version number is stored in CustomProperty7.
-- Script can be manually invoked from the Automate tab on the Host screen.
+- Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot). RanCommand events are parsed for JSON output and the version number is stored in CustomProperty7. Agent ID is stored as CustomProperty6. (NOTE: To rename the custom properties or reset the Session group, set the createdVersionSessionGroup setting to false)
+- Script can be manually invoked from the Automate tab on the Host screen or in the drop down menu when selecting sessions.
 ![example](https://i.snag.gy/P21qyJ.jpg)
 
 ## Credit
