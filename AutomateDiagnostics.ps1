@@ -1,8 +1,9 @@
 # WMI Service check and start/auto
 Function serviceCheck($service){
     Try {
-	    $svc_info = Get-WmiObject win32_service | where-object {$_.name -eq $service}
-        @{'Status' = $svc_info.State; 'Start Mode' = $svc_info.StartMode; 'User' = $svc_info.StartName}
+        $svc_info = Get-WmiObject win32_service | where-object {$_.name -eq $service}
+        if ($svc_info.Count -gt 0) { @{'Status' = $svc_info.State; 'Start Mode' = $svc_info.StartMode; 'User' = $svc_info.StartName} }
+        else {@{'Status' = 'Not Detected'; 'Start Mode' = ""; 'User' = ""}}
     }
     Catch {
         @{'Status' = 'Not Detected'; 'Start Mode' = ""; 'User' = ""}
@@ -260,15 +261,15 @@ function ConvertTo-STJson {
 
 Function Start-AutomateDiagnostics {
 	Param(
-		$ltposh = "http://bit.ly/LTPoSh"
+        $ltposh = "http://bit.ly/LTPoSh",
+        $automate_server = ""
 	)
 
     # Get powershell version
 	$psver = Get-PSVersion
     
     Try {
-        # Invoke LTPosh
-	    (new-object Net.WebClient).DownloadString($ltposh) | iex
+        Try { (new-object Net.WebClient).DownloadString($ltposh) | Invoke-Expression } Catch {}
         $ltsvcinfo = Get-Command -ListImported -Name Get-LTServiceInfo
         $ltposh_loaded = $true
     }
@@ -279,9 +280,10 @@ Function Start-AutomateDiagnostics {
     
     if ($ltposh_loaded -eq $false -and $ltposh -ne "http://bit.ly/LTPoSh") {
         Try {
+            $ltposh = "http://bit.ly/LTPoSh"
             Write-Output "LTPosh failed to load, failing back to bit.ly link"
             # Invoke LTPosh
-            (new-object Net.WebClient).DownloadString("http://bit.ly/LTPoSh") | iex
+            Try { (new-object Net.WebClient).DownloadString($ltposh) | Invoke-Expression } Catch {}
             $ltsvcinfo = Get-Command -ListImported -Name Get-LTServiceInfo
             $ltposh_loaded = $true
         }
@@ -343,10 +345,11 @@ Function Start-AutomateDiagnostics {
                 }
                 else {
                     Try {
+                        $compare_test = if (($hostname -eq $automate_server -and $automate_server -ne "") -or $automate_server -eq "") { $true } else { $false }
                         $conn_test = Test-Connection $hostname
                         $ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
                         $target_version = $ver_test.Split('|')[6]
-                        if ($conn_test -and $target_version -ne "") {
+                        if ($conn_test -and $target_version -ne "" -and $compare_test) {
                             $server_test = $true
                             $server_msg = "$server passed all checks"
                             break
@@ -365,7 +368,6 @@ Function Start-AutomateDiagnostics {
             }
 
             # Check updates
-            $updatedebug = ""
             $current_version = $info.Version
             if ($target_version -eq $info.Version) {
                 $update_text = "No updates to install, on {0}" -f $info.Version
@@ -375,7 +377,7 @@ Function Start-AutomateDiagnostics {
                 taskkill /im ltsvcmon.exe /f
                 taskkill /im lttray.exe /f
                 Try {
-                    $results = Update-LTService -WarningVariable updatetest -WarningAction SilentlyContinue
+                    Update-LTService -WarningVariable updatewarn
                     Start-Sleep -Seconds 60
                     Start-Service LTService
                     Start-Service LTSvcMon
@@ -397,29 +399,41 @@ Function Start-AutomateDiagnostics {
                 'id' = $info.id
                 'version' = $info.Version
                 'server_addr' = $server_msg
+                'server_match' = $compare_test
                 'online' = $online
                 'heartbeat' = $heartbeat
                 'update' = $update_text
-                'update_results' = $results
                 'lastcontact'  = $info.LastSuccessStatus
                 'heartbeat_sent' = $info.HeartbeatLastSent
                 'heartbeat_rcv' = $info.HeartbeatLastReceived
                 'svc_ltservice' = $ltservice_check
                 'svc_ltsvcmon' = $ltsvcmon_check
                 'ltposh_loaded' = $ltposh_loaded
+                'clientid' = $info.ClientID
+                'locationid' = $info.LocationID
             }
         }
         Catch {
+            $ltsvc_path_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc")
+            $locationid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).locationid } Catch { 1 }
+            $clientid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).clientid } Catch { 0 }
+            $repair = if (!($ltsvc_path_exists) -or $ltsvcmon_check.Status -eq "Not Detected" -or $ltservice_check.Status -eq "Not Detected") { "Reinstall" } else { "Restart" }
             $diag = @{
+                'svc_ltservice' = $ltservice_check
+                'svc_ltsvcmon' = $ltsvcmon_check
                 'ltposh_loaded' = $ltposh_loaded
                 'server_addr' = "Automate agent not detected"
                 'version' = 'No Agent Installed'
+                'ltsvc_path_exists' = $ltsvc_path_exists
+                'locationid' = $locationid
+                'clientid' = $clientid
+                'repair' = $repair
             }
         }
     }
     else {
         $diag = @{
-            'svc_ltservice' = $ltservicecheck
+            'svc_ltservice' = $ltservice_check
             'svc_ltsvcmon' = $ltsvcmon_check
             'ltposh_loaded' = $ltposh_loaded
             'version' = 'Error loading LTPosh'
@@ -427,7 +441,7 @@ Function Start-AutomateDiagnostics {
     }
 	Write-Output "!---BEGIN JSON---!"
 
-	# Output diagnostic data in JSON format
+	# Output diagnostic data in JSON format - ps2.0 compatible
 	if ($psver -ge [version]"3.0.0.0") {
 		$diag | ConvertTo-Json -depth 2
 	}

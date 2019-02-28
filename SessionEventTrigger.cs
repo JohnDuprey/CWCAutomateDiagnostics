@@ -20,7 +20,8 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					if (sessionDetails.Session.SessionType == SessionType.Access) {
 						var ltposh = ExtensionContext.Current.GetSettingValue("PathToLTPoSh");
 						var diag = ExtensionContext.Current.GetSettingValue("PathToDiag");
-						var command = "#!ps\n#maxlength=100000\n#timeout=300000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; Try { Try {[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; } Catch {}; (new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"'} Catch { Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
+						var server = ExtensionContext.Current.GetSettingValue("AutomateHostname");
+						var command = "#!ps\n#maxlength=100000\n#timeout=300000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; Try { IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; (new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"' -automate_server '"+server+"'} Catch { Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
 						SessionManagerPool.Demux.AddSessionEvent(
 							sessionEventTriggerEvent.Session.SessionID,
 							new SessionEvent
@@ -42,8 +43,12 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					if (data[1] != "") {
 						DiagOutput diag = Deserialize(data[1]);
 						var session = sessionEventTriggerEvent.Session;
-						session.CustomPropertyValues[6] = diag.version;
-						session.CustomPropertyValues[5] = diag.id;
+						if (diag.version != null) {
+							session.CustomPropertyValues[6] = diag.version;
+						}
+						if (diag.id != null) {
+							session.CustomPropertyValues[5] = diag.id;
+						}
 						SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, session.Name, session.IsPublic, session.Code, session.CustomPropertyValues);
 					}
 				};
