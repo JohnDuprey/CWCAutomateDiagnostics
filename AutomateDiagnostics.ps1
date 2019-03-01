@@ -318,8 +318,9 @@ Function Start-AutomateDiagnostics {
 
             # If services are stopped, use Restart-LTService to get them working again
             If ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped" -or !($heartbeat) -or !($online)) {
+                Start-Sleep -Seconds 60
                 Try { Restart-LTService -Confirm:$false } Catch {}
-                Start-Sleep -Seconds 30
+                Start-Sleep -Seconds 60
                 $info = Get-LTServiceInfo
                 $ltservice_check = serviceCheck('LTService')
                 $ltsvcmon_check = serviceCheck('LTSVCMon')
