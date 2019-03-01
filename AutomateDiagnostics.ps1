@@ -12,7 +12,7 @@ Function Get-PSVersion {
 
 #PS 2.0 JSON Conversion
 function Escape-JSONString($str){
-	if ($str -eq $null) {return ""}
+	if ($null -eq $str) {return ""}
 	$str = $str.ToString().Replace('"','\"').Replace('\','\\').Replace("`n",'\n').Replace("`r",'\r').Replace("`t",'\t')
 	return $str;
 }
@@ -290,6 +290,13 @@ Function Start-AutomateDiagnostics {
 	$ltservice_check = serviceCheck('LTService')
     $ltsvcmon_check = serviceCheck('LTSVCMon')
 
+    # Get reg keys if LTPosh fails
+    $ltsvc_path_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc")
+    $locationid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).locationid } Catch { $null }
+    $clientid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).clientid } Catch { $null }
+    $id = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).id } Catch { $null }
+    $version = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).version } Catch { $null }
+
     if ($ltposh_loaded) {
         # Get ltservice info
         Try {
@@ -372,7 +379,7 @@ Function Start-AutomateDiagnostics {
                 taskkill /im lttray.exe /f
                 Try {
                     Update-LTService -WarningVariable updatewarn
-                    Start-Sleep -Seconds 120
+                    Start-Sleep -Seconds 300
                     Start-Service LTService
                     Start-Service LTSvcMon
                     $info = Get-LTServiceInfo
@@ -405,14 +412,13 @@ Function Start-AutomateDiagnostics {
                 'ltposh_loaded' = $ltposh_loaded
                 'clientid' = $info.ClientID
                 'locationid' = $info.LocationID
+                'ltsvc_path_exists' = $ltsvc_path_exists
             }
         }
-        Catch {
-            $ltsvc_path_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc")
-            $locationid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).locationid } Catch { 1 }
-            $clientid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).clientid } Catch { 0 }
+        Catch { # LTPosh loaded, issue with agent
             $repair = if (!($ltsvc_path_exists) -or $ltsvcmon_check.Status -eq "Not Detected" -or $ltservice_check.Status -eq "Not Detected") { "Reinstall" } else { "Restart" }
             $diag = @{
+                'id' = $id
                 'svc_ltservice' = $ltservice_check
                 'svc_ltsvcmon' = $ltsvcmon_check
                 'ltposh_loaded' = $ltposh_loaded
@@ -425,12 +431,16 @@ Function Start-AutomateDiagnostics {
             }
         }
     }
-    else {
+    else { # LTPosh Failure, show basic settings
         $diag = @{
+            'id' = $id
+            'ltsvc_path_exists' = $ltsvc_path_exists
+            'locationid' = $locationid
+            'clientid' = $clientid
             'svc_ltservice' = $ltservice_check
             'svc_ltsvcmon' = $ltsvcmon_check
             'ltposh_loaded' = $ltposh_loaded
-            'version' = 'Error loading LTPosh'
+            'version' = $version
         }
     }
 	Write-Output "!---BEGIN JSON---!"
