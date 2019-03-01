@@ -268,29 +268,27 @@ Function Start-AutomateDiagnostics {
     # Get powershell version
 	$psver = Get-PSVersion
     
-    Try {
-        Try { (new-object Net.WebClient).DownloadString($ltposh) | Invoke-Expression } Catch {}
-        $ltsvcinfo = Get-Command -ListImported -Name Get-LTServiceInfo
-        $ltposh_loaded = $true
-    }
-    Catch {
-        $ltposh_loaded = $false
-        $_.Exception.Message
-    }
-    
-    if ($ltposh_loaded -eq $false -and $ltposh -ne "http://bit.ly/LTPoSh") {
-        Try {
-            $ltposh = "http://bit.ly/LTPoSh"
-            Write-Output "LTPosh failed to load, failing back to bit.ly link"
-            # Invoke LTPosh
-            Try { (new-object Net.WebClient).DownloadString($ltposh) | Invoke-Expression } Catch {}
-            $ltsvcinfo = Get-Command -ListImported -Name Get-LTServiceInfo
-            $ltposh_loaded = $true
-        }
-        Catch {
-            $ltposh_loaded = $false
-            $_.Exception.Message
-        }
+    Try { 
+		(new-object Net.WebClient).DownloadString($ltposh) | Invoke-Expression 
+		$ltsvcinfo = Get-Command -ListImported -Name Get-LTServiceInfo		
+		$ltposh_loaded = $true
+	} 
+	Catch {
+		$_.Exception.Message
+		$ltposh_loaded = $false
+	}
+    If ($ltposh_loaded -eq $false -and $ltposh -ne "http://bit.ly/LTPoSh") {
+        Write-Output "LTPosh failed to load, failing back to bit.ly link"
+        $ltposh = "http://bit.ly/LTPoSh"
+		Try { 
+			(new-object Net.WebClient).DownloadString($ltposh) | Invoke-Expression 
+			$ltsvcinfo = Get-Command -ListImported -Name Get-LTServiceInfo		
+			$ltposh_loaded = $true
+		} 
+		Catch {
+			$_.Exception.Message
+			$ltposh_loaded = $false
+		}
     }
 
 	# Check services
@@ -378,7 +376,7 @@ Function Start-AutomateDiagnostics {
                 taskkill /im lttray.exe /f
                 Try {
                     Update-LTService -WarningVariable updatewarn
-                    Start-Sleep -Seconds 60
+                    Start-Sleep -Seconds 120
                     Start-Service LTService
                     Start-Service LTSvcMon
                     $info = Get-LTServiceInfo
