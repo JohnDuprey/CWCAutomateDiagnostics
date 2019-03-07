@@ -258,7 +258,10 @@ Function Start-AutomateDiagnostics {
 	Param(
         $ltposh = "http://bit.ly/LTPoSh",
         $automate_server = ""
-	)
+    )
+    
+    # Add some wait time in to allow registry to populate
+    Start-Sleep -Seconds 30
 
     # Get powershell version
 	$psver = Get-PSVersion
@@ -317,7 +320,15 @@ Function Start-AutomateDiagnostics {
             $heartbeat_rcv = $lasthbrcv -ge $heartbeat_threshold 
             $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
             $heartbeat = $heartbeat_rcv -or $heartbeat_snd
-
+            $heartbeat_status = $info.HeartbeatLastSent
+            if ($psver -ge [version]"3.0.0.0" -and $heartbeat -eq $false) { # Check network sockets for established connection from ltsvc to server
+                $socket = Get-Process -processname "ltsvc" | Foreach-Object { $process = $_.ID; Get-NetTCPConnection | Where-Object {$_.State -eq "Established" -and $_.RemotePort -eq 443 -and $_.OwningProcess -eq $process}}
+                if ($socket.State -eq 'Established') {
+                    $heartbeat = $true
+                    $heartbeat_status = "Socket Established"
+                }
+            }
+            
             # If services are stopped, use Restart-LTService to get them working again
             If ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped" -or !($heartbeat) -or !($online)) {
                 Start-Sleep -Seconds 60
@@ -334,6 +345,14 @@ Function Start-AutomateDiagnostics {
                 $heartbeat_rcv = $lasthbrcv -ge $heartbeat_threshold 
                 $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
                 $heartbeat = $heartbeat_rcv -or $heartbeat_snd
+                $heartbeat_status = $info.HeartbeatLastSent
+                if ($psver -ge [version]"3.0.0.0" -and $heartbeat -eq $false) { # Check network sockets for established connection from ltsvc to server
+                    $socket = Get-Process -processname "ltsvc" | Foreach-Object { $process = $_.ID; Get-NetTCPConnection | Where-Object {$_.State -eq "Established" -and $_.RemotePort -eq 443 -and $_.OwningProcess -eq $process}}
+                    if ($socket.State -eq 'Established') {
+                        $heartbeat = $true
+                        $heartbeat_status = "Socket Established"
+                    }
+                }
             }
 
             # Get server list
@@ -379,10 +398,12 @@ Function Start-AutomateDiagnostics {
                 taskkill /im lttray.exe /f
                 Try {
                     Update-LTService -WarningVariable updatewarn
+                    Start-Sleep -Seconds 60
+                    Try { Restart-LTService -Confirm:$false } Catch {}
                     Start-Sleep -Seconds 300
-                    Start-Service LTService
-                    Start-Service LTSvcMon
+                    
                     $info = Get-LTServiceInfo
+                    
                     if ([version]$info.Version -gt [version]$current_version) {
                         $update_text = 'Updated from {1} to {0}' -f $info.Version,$current_version
                     }
@@ -405,7 +426,7 @@ Function Start-AutomateDiagnostics {
                 'heartbeat' = $heartbeat
                 'update' = $update_text
                 'lastcontact'  = $info.LastSuccessStatus
-                'heartbeat_sent' = $info.HeartbeatLastSent
+                'heartbeat_sent' = $heartbeat_status
                 'heartbeat_rcv' = $info.HeartbeatLastReceived
                 'svc_ltservice' = $ltservice_check
                 'svc_ltsvcmon' = $ltsvcmon_check
@@ -416,6 +437,7 @@ Function Start-AutomateDiagnostics {
             }
         }
         Catch { # LTPosh loaded, issue with agent
+            $_.Exception.Message
             $repair = if (!($ltsvc_path_exists) -or $ltsvcmon_check.Status -eq "Not Detected" -or $ltservice_check.Status -eq "Not Detected") { "Reinstall" } else { "Restart" }
             $diag = @{
                 'id' = $id
