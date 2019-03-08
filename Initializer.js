@@ -55,7 +55,7 @@ SC.event.addGlobalHandler(SC.event.RefreshTab, function (eventArgs) {
 			operatingSystemName: eventArgs.session.GuestOperatingSystemName 
 		};
 			
-		displayDiagnosticInformation(
+		displayAutomateDiagInfo(
 			getLatestDiagnosticEvent(
 				eventArgs.sessionDetails, 
 				eventArgs.tabName
@@ -74,7 +74,7 @@ SC.event.addGlobalHandler(SC.event.ExecuteCommand, function (eventArgs) {
 				[window.getSessionUrlPart()], 
 				SC.types.SessionEventType.QueuedCommand, 
 				null,
-				getInputCommand(
+				getAutomateInputCommand(
 					eventArgs.commandArgument.type, 
 					eventArgs.commandArgument.operatingSystemName
 					),
@@ -89,8 +89,8 @@ SC.event.addGlobalHandler(SC.event.ExecuteCommand, function (eventArgs) {
 			var sessionType = checkedOrSelectedSessions[0].SessionType === undefined ? SC.types.SessionTypes.Access : checkedOrSelectedSessions[0].SessionType;
 			var windowsSessionIDs = Array.prototype.map.call(checkedOrSelectedSessions, function (s) { if (s.GuestOperatingSystemName.includes("Windows")) return s.SessionID; }).filter(function(s){return s !== undefined});
 			var linuxMacSessionIDs = Array.prototype.map.call(checkedOrSelectedSessions, function (s) { if (!s.GuestOperatingSystemName.includes("Windows")) return s.SessionID; }).filter(function(s){return s !== undefined});
-			window.addEventToSessions(window.getSessionGroupUrlPart()[0], SC.types.SessionType.Access, windowsSessionIDs, SC.types.SessionEventType.QueuedCommand, null, getInputCommand('Automate', 'Windows'),	false, false, true);
-			window.addEventToSessions(window.getSessionGroupUrlPart()[0], SC.types.SessionType.Access, linuxMacSessionIDs, SC.types.SessionEventType.QueuedCommand, null, getInputCommand('Automate', 'Linux'), false, false, true);
+			window.addEventToSessions(window.getSessionGroupUrlPart()[0], SC.types.SessionType.Access, windowsSessionIDs, SC.types.SessionEventType.QueuedCommand, null, getAutomateInputCommand('Automate', 'Windows'),	false, false, true);
+			window.addEventToSessions(window.getSessionGroupUrlPart()[0], SC.types.SessionType.Access, linuxMacSessionIDs, SC.types.SessionEventType.QueuedCommand, null, getAutomateInputCommand('Automate', 'Linux'), false, false, true);
 			break;
 	}
 });
@@ -121,10 +121,10 @@ SC.event.addGlobalHandler(SC.event.PreRender, function (eventArgs) {
 	}
 });
 
-function getInputCommand(diagnosticType, operatingSystem) {
+function getAutomateInputCommand(diagnosticType, operatingSystem) {
 	var headers = getHeaders(operatingSystem);
 	headers.DiagnosticType = diagnosticType;
-	var commandText = getDiagnosticCommandText(headers);
+	var commandText = getAutomateCommandText(headers);
 	
 	var emptyLinePrefix = '';
 	
@@ -200,7 +200,7 @@ function parseDataHeaders(eventData) {
 	return headers;
 }
 
-function displayDiagnosticInformation(latestDiagnosticEvent, baseTime) {
+function displayAutomateDiagInfo(latestDiagnosticEvent, baseTime) {
 	var headers = parseDataHeaders(latestDiagnosticEvent.Data);
 	var output = latestDiagnosticEvent.Data;
 	var data = output.split("!---BEGIN JSON---!");
@@ -307,11 +307,11 @@ function timeDifference(current, previous) {
         return 'approximately ' + Math.round(elapsed/msPerYear ) + ' years ago';   
 }
 
-function getDiagnosticCommandText(headers) {
+function getAutomateCommandText(headers) {
 	switch (headers.Processor + '/' + headers.Interface + '/' + headers.ContentType + '/' + headers.DiagnosticType)
 	{
-		case "ps/powershell/json/Automate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; Try { (new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex; Start-AutomateDiagnostics -ltposh '"+getLTPoSh()+"' -automate_server '"+getLTServer()+"'} Catch { $_.Exception.Message; Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }"; break;
-		case "sh/bash/json/Automate": return "curl -s "+getLinuxDiagnosticsURL()+" | python"; break;
+		case "ps/powershell/json/Automate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; Try { (new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex; Start-AutomateDiagnostics -ltposh '"+getLTPoSh()+"' -automate_server '"+getLTServer()+"'} Catch { $_.Exception.Message; Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
+		case "sh/bash/json/Automate": return "url="+getLinuxDiagnosticsURL()+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $url; echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi"; 
     	default: throw "unknown os";
 	}
 }
