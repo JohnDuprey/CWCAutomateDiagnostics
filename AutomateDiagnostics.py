@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import platform
 
 def system_call(command):
     p = subprocess.Popen([command], stdout=subprocess.PIPE, shell=True)
@@ -12,15 +13,15 @@ with open("/usr/local/ltechagent/state","r") as read_file:
 
 # Get last contact date
 lc = data["last_contact"]
-last_contact = "{0}/{1}/{2} {3}:{4}:{5}".format(lc["day_of_month"],lc["month"],lc["year"],lc["hour"],lc["min"],lc["sec"])
+last_contact = "{0}/{1}/{2} {3}:{4:02d}:{5:02d}".format(lc["day_of_month"],lc["month"],lc["year"],lc["hour"],lc["min"],lc["sec"])
 
 # Check services
-if os.name == 'posix':
+if platform.system() == 'Darwin':
 	if system_call("launchctl list | grep com.labtechsoftware.LTSvc") != "":
 		svc_ltsvc = { "Status": "Running", "User": "com.labtechsoftware.LTSvc", "Start Mode": "Auto"}
 	else:
 		svc_ltsvc = { "Status": "Stopped", "User": "com.labtechsoftware.LTSvc", "Start Mode": "Auto"}
-else:
+elif platform.system() == 'Linux':
 	print("Linux")
 
 

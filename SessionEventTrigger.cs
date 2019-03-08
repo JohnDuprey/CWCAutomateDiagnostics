@@ -27,13 +27,14 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 						//var_dump(sessionDetails);
 						//var_dump(sessionDetails.Session.GuestInfo);
 						var command = "";
-						//var os = "Windows";
+
 						if ( os.StartsWith("Windows") ) { 
 							command = "#!ps\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; Try {(new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"' -automate_server '"+server+"'} Catch { Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
 						}
-						else {
-							command = "#!sh\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\nurl="+linuxdiag+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $url; echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi";
+						else if ( os.StartsWith("Mac") || os.StartsWith("Linux") ) {
+							command = "#!sh\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\n echo "+os+"; url="+linuxdiag+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $url; echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi";
 						}
+						else { command = "echo No OS Detected, try running the diagnostic again"; }
 						
 						SessionManagerPool.Demux.AddSessionEvent(
 							sessionEventTriggerEvent.Session.SessionID,
