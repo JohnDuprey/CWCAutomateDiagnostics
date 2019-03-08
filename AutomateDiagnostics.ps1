@@ -342,15 +342,16 @@ Function Start-AutomateDiagnostics {
                 $heartbeat = $heartbeat_rcv -or $heartbeat_snd
                 $heartbeat_status = $info.HeartbeatLastSent
             }
-
-            # Check for persistent TCP connection
-            if ($psver -ge [version]"3.0.0.0" -and $heartbeat -eq $false) { # Check network sockets for established connection from ltsvc to server
-                $socket = Get-Process -processname "ltsvc" | Foreach-Object { $process = $_.ID; Get-NetTCPConnection | Where-Object {$_.State -eq "Established" -and $_.RemotePort -eq 443 -and $_.OwningProcess -eq $process}}
-                if ($socket.State -eq 'Established') {
-                    $heartbeat = $true
-                    $heartbeat_status = "Socket Established"
+            Try {
+                # Check for persistent TCP connection
+                if ($psver -ge [version]"3.0.0.0" -and $heartbeat -eq $false) { # Check network sockets for established connection from ltsvc to server
+                    $socket = Get-Process -processname "ltsvc" | Foreach-Object { $process = $_.ID; Get-NetTCPConnection | Where-Object {$_.State -eq "Established" -and $_.RemotePort -eq 443 -and $_.OwningProcess -eq $process}}
+                    if ($socket.State -eq 'Established') {
+                        $heartbeat = $true
+                        $heartbeat_status = "Socket Established"
+                    }
                 }
-            }
+            } Catch {}
 
             # Get server list
             $server_test = $false
