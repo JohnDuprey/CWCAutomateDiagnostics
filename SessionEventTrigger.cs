@@ -24,7 +24,6 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 						var linuxdiag = ExtensionContext.Current.GetSettingValue("PathToMacLinuxDiag");
 						var server = ExtensionContext.Current.GetSettingValue("AutomateHostname");
 						var os = sessionDetails.Session.GuestInfo.OperatingSystemName;
-						WriteLog(os);
 						//var_dump(sessionDetails);
 						//var_dump(sessionDetails.Session.GuestInfo);
 						var command = "";
@@ -92,8 +91,7 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 	public static void var_dump(object obj)   
 	{   
 			WriteLog(String.Format("{0,-18} {1}", "Name", "Value"));   
-			string ln = @"-------------------------------------   
-				----------------------------";   
+			string ln = @"-----------------------------------------------------------------";   
 			WriteLog(ln);   
 				
 			Type t = obj.GetType();   
