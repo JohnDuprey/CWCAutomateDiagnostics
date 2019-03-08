@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ExtensionManifest>
-	<Version>1.0.2.5</Version>
+	<Version>1.0.3.1</Version>
 	<Name>Automate Diagnostics</Name>
 	<Author>John Duprey - Complete Network</Author>
 	<ShortDescription>Diagnoses Automate Agents from CW Control. Change the LTPoSh URL in the settings.</ShortDescription>
@@ -18,6 +18,10 @@
 		<Setting Name="PathToDiag" IsServerOnly="false">
 			<Description>The URL for launching AutomateDiagnostics.</Description>
 			<DefaultValue>https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.ps1</DefaultValue>
+		</Setting>
+		<Setting Name="PathToMacLinuxDiag" IsServerOnly="false">
+			<Description>The URL for launching AutomateDiagnostics.</Description>
+			<DefaultValue>https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.py</DefaultValue>
 		</Setting>
 		<Setting Name="AutomateHostname" IsServerOnly="false">
 			<Description>The hostname for your automate server (exclude https://).</Description>

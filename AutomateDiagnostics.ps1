@@ -293,12 +293,13 @@ Function Start-AutomateDiagnostics {
 	$ltservice_check = serviceCheck('LTService')
     $ltsvcmon_check = serviceCheck('LTSVCMon')
 
-    # Get reg keys if LTPosh fails
+    # Get reg keys in case LTPosh fails
     $ltsvc_path_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc")
     $locationid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).locationid } Catch { $null }
     $clientid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).clientid } Catch { $null }
     $id = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).id } Catch { $null }
     $version = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).version } Catch { $null }
+    $server = Try { ((Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop)."Server Address") } Catch { $null }
 
     if ($ltposh_loaded) {
         # Get ltservice info
@@ -321,13 +322,7 @@ Function Start-AutomateDiagnostics {
             $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
             $heartbeat = $heartbeat_rcv -or $heartbeat_snd
             $heartbeat_status = $info.HeartbeatLastSent
-            if ($psver -ge [version]"3.0.0.0" -and $heartbeat -eq $false) { # Check network sockets for established connection from ltsvc to server
-                $socket = Get-Process -processname "ltsvc" | Foreach-Object { $process = $_.ID; Get-NetTCPConnection | Where-Object {$_.State -eq "Established" -and $_.RemotePort -eq 443 -and $_.OwningProcess -eq $process}}
-                if ($socket.State -eq 'Established') {
-                    $heartbeat = $true
-                    $heartbeat_status = "Socket Established"
-                }
-            }
+
             
             # If services are stopped, use Restart-LTService to get them working again
             If ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped" -or !($heartbeat) -or !($online)) {
@@ -346,12 +341,14 @@ Function Start-AutomateDiagnostics {
                 $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
                 $heartbeat = $heartbeat_rcv -or $heartbeat_snd
                 $heartbeat_status = $info.HeartbeatLastSent
-                if ($psver -ge [version]"3.0.0.0" -and $heartbeat -eq $false) { # Check network sockets for established connection from ltsvc to server
-                    $socket = Get-Process -processname "ltsvc" | Foreach-Object { $process = $_.ID; Get-NetTCPConnection | Where-Object {$_.State -eq "Established" -and $_.RemotePort -eq 443 -and $_.OwningProcess -eq $process}}
-                    if ($socket.State -eq 'Established') {
-                        $heartbeat = $true
-                        $heartbeat_status = "Socket Established"
-                    }
+            }
+
+            # Check for persistent TCP connection
+            if ($psver -ge [version]"3.0.0.0" -and $heartbeat -eq $false) { # Check network sockets for established connection from ltsvc to server
+                $socket = Get-Process -processname "ltsvc" | Foreach-Object { $process = $_.ID; Get-NetTCPConnection | Where-Object {$_.State -eq "Established" -and $_.RemotePort -eq 443 -and $_.OwningProcess -eq $process}}
+                if ($socket.State -eq 'Established') {
+                    $heartbeat = $true
+                    $heartbeat_status = "Socket Established"
                 }
             }
 
@@ -390,7 +387,7 @@ Function Start-AutomateDiagnostics {
             # Check updates
             $current_version = $info.Version
             if ($target_version -eq $info.Version) {
-                $update_text = "No updates to install, on {0}" -f $info.Version
+                $update_text = "Version {0} - Latest" -f $info.Version
             }
             else {
                 taskkill /im ltsvc.exe /f
@@ -412,7 +409,7 @@ Function Start-AutomateDiagnostics {
                     }
                 }
                 Catch {
-                    $update_text = "Update-LTService failed to run"
+                    $update_text = "Error: Update-LTService failed to run"
                 }
 
             }
@@ -444,8 +441,8 @@ Function Start-AutomateDiagnostics {
                 'svc_ltservice' = $ltservice_check
                 'svc_ltsvcmon' = $ltsvcmon_check
                 'ltposh_loaded' = $ltposh_loaded
-                'server_addr' = "Automate agent not detected"
-                'version' = 'No Agent Installed'
+                'server_addr' = $server
+                'version' = 'Agent error'
                 'ltsvc_path_exists' = $ltsvc_path_exists
                 'locationid' = $locationid
                 'clientid' = $clientid
@@ -457,6 +454,7 @@ Function Start-AutomateDiagnostics {
         $diag = @{
             'id' = $id
             'ltsvc_path_exists' = $ltsvc_path_exists
+            'server_addr' = $server
             'locationid' = $locationid
             'clientid' = $clientid
             'svc_ltservice' = $ltservice_check

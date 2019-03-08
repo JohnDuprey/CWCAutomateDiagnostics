@@ -8,6 +8,7 @@ using System.Collections;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text.RegularExpressions;
+using System.Reflection;
 public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 {
 	public Proc GetDeferredActionIfApplicable(SessionEventTriggerEvent sessionEventTriggerEvent)
@@ -20,8 +21,21 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					if (sessionDetails.Session.SessionType == SessionType.Access) {
 						var ltposh = ExtensionContext.Current.GetSettingValue("PathToLTPoSh");
 						var diag = ExtensionContext.Current.GetSettingValue("PathToDiag");
+						var linuxdiag = ExtensionContext.Current.GetSettingValue("PathToMacLinuxDiag");
 						var server = ExtensionContext.Current.GetSettingValue("AutomateHostname");
-						var command = "#!ps\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; Try {(new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"' -automate_server '"+server+"'} Catch { Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
+						var os = sessionDetails.Session.GuestInfo.OperatingSystemName;
+						WriteLog(os);
+						//var_dump(sessionDetails);
+						//var_dump(sessionDetails.Session.GuestInfo);
+						var command = "";
+						//var os = "Windows";
+						if ( os.StartsWith("Windows") ) { 
+							command = "#!ps\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; Try {(new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"' -automate_server '"+server+"'} Catch { Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
+						}
+						else {
+							command = "#!sh\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho\ncurl -s "+linuxdiag+" | python";
+						}
+						
 						SessionManagerPool.Demux.AddSessionEvent(
 							sessionEventTriggerEvent.Session.SessionID,
 							new SessionEvent
@@ -75,6 +89,29 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
         }
         catch {}
     }
+	public static void var_dump(object obj)   
+	{   
+			WriteLog(String.Format("{0,-18} {1}", "Name", "Value"));   
+			string ln = @"-------------------------------------   
+				----------------------------";   
+			WriteLog(ln);   
+				
+			Type t = obj.GetType();   
+			PropertyInfo[] props = t.GetProperties();   
+				
+			for(int i = 0; i < props.Length; i++)   
+			{   
+					try   
+					{   
+							WriteLog(String.Format("{0,-18} {1}",   
+								props[i].Name, props[i].GetValue(obj, null)));   
+					}   
+					catch(Exception e)   
+					{   
+							//Console.WriteLine(e);   
+					}   
+			}   
+	}
 }
 
 public class DiagOutput

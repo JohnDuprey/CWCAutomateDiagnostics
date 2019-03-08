@@ -10,6 +10,9 @@ function getLTPoSh() {
 function getAutomateDiagnosticsURL() {
 	return extensionContext.settingValues.PathToDiag;
 }
+function getLinuxDiagnosticsURL() {
+	return extensionContext.settingValues.PathToMacLinuxDiag;
+}
 function getLTServer() {
 	return extensionContext.settingValues.AutomateHostname;
 }
@@ -85,20 +88,9 @@ SC.event.addGlobalHandler(SC.event.ExecuteCommand, function (eventArgs) {
 			var checkedOrSelectedSessions = Array.prototype.map.call(checkedOrSelectedRows, function (r) { return r._dataItem; });
 			var sessionType = checkedOrSelectedSessions[0].SessionType === undefined ? SC.types.SessionTypes.Access : checkedOrSelectedSessions[0].SessionType;
 			var windowsSessionIDs = Array.prototype.map.call(checkedOrSelectedSessions, function (s) { if (s.GuestOperatingSystemName.includes("Windows")) return s.SessionID; }).filter(function(s){return s !== undefined});
-			window.addEventToSessions(
-				window.getSessionGroupUrlPart()[0], 
-				SC.types.SessionType.Access,
-				windowsSessionIDs, 
-				SC.types.SessionEventType.QueuedCommand, 
-				null,
-				getInputCommand(
-					'Automate', 
-					'Windows'
-					),
-				false,
-				false,
-				true
-			);
+			var linuxMacSessionIDs = Array.prototype.map.call(checkedOrSelectedSessions, function (s) { if (!s.GuestOperatingSystemName.includes("Windows")) return s.SessionID; }).filter(function(s){return s !== undefined});
+			window.addEventToSessions(window.getSessionGroupUrlPart()[0], SC.types.SessionType.Access, windowsSessionIDs, SC.types.SessionEventType.QueuedCommand, null, getInputCommand('Automate', 'Windows'),	false, false, true);
+			window.addEventToSessions(window.getSessionGroupUrlPart()[0], SC.types.SessionType.Access, linuxMacSessionIDs, SC.types.SessionEventType.QueuedCommand, null, getInputCommand('Automate', 'Linux'), false, false, true);
 			break;
 	}
 });
@@ -152,7 +144,13 @@ function getInputCommand(diagnosticType, operatingSystem) {
 }
 
 function getHeaders(operatingSystem) {
-	return { Processor: "ps", Interface: "powershell", ContentType: "json", shaBang: "ps", modifier: "echo \"", delimiter: '\"' };
+	console.log(operatingSystem);
+	if (operatingSystem.startsWith("Windows")) {
+		return { Processor: "ps", Interface: "powershell", ContentType: "json", shaBang: "ps", modifier: "echo \"", delimiter: '\"' };
+	}
+	else {
+		return { Processor: "sh", Interface: "bash", ContentType: "json", shaBang: "sh", modifier: "echo ", delimiter: '' };
+	}
 }
 
 function isMyTab(tabName) {
@@ -225,19 +223,22 @@ function displayDataJson(json) {
 		SC.ui.addElement($('ltposh_row'), 'td', {id: 'ltposh', innerHTML: (json["ltposh_loaded"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>"});
 	}
 	if ("server_addr" in json) {
+		if (!/Error/i.test(json["server_addr"])) { var server_status = "<span class='success'>✓</span>"; } else { var server_status = "<span class='failed'>✗</span>"; }
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'server_row'});
 		SC.ui.addElement($('server_row'), 'th', {id: 'server_hdr', innerHTML: 'Server Check'});
-		SC.ui.addElement($('server_row'), 'td', {id: 'server', innerHTML: json["server_addr"], colspan: 2});
+		SC.ui.addElement($('server_row'), 'td', {id: 'server', innerHTML: server_status + " " + json["server_addr"], colspan: 2});
 	}
 	if ("id" in json) {
+		if (json["id"] > 0) { var agentid_status = "<span class='success'>✓</span>"; } else { var agentid_status = "<span class='failed'>✗</span>"; }
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'agent_id_row'});
 		SC.ui.addElement($('agent_id_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Agent ID'});
-		SC.ui.addElement($('agent_id_row'), 'td', {id: 'agent_id', innerHTML: json["id"]});
+		SC.ui.addElement($('agent_id_row'), 'td', {id: 'agent_id', innerHTML: agentid_status + " " + json["id"]});
 	}
 	if ("update" in json) {
+		if (!/Error/i.test(json["update"])) { var update_status = "<span class='success'>✓</span>"; } else { var update_status = "<span class='failed'>✗</span>"; }
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'update_row'});
 		SC.ui.addElement($('update_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Update Check'});
-		SC.ui.addElement($('update_row'), 'td', {id: 'agent_id', innerHTML: json["update"], colspan: 2});
+		SC.ui.addElement($('update_row'), 'td', {id: 'agent_id', innerHTML: update_status + " " + json["update"], colspan: 2});
 	}
 	if ("online" in json) {
 		var online_status = (json["online"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>";
@@ -309,7 +310,8 @@ function timeDifference(current, previous) {
 function getDiagnosticCommandText(headers) {
 	switch (headers.Processor + '/' + headers.Interface + '/' + headers.ContentType + '/' + headers.DiagnosticType)
 	{
-		case "ps/powershell/json/Automate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; Try { (new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex; Start-AutomateDiagnostics -ltposh '"+getLTPoSh()+"' -automate_server '"+getLTServer()+"'} Catch { $_.Exception.Message; Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
+		case "ps/powershell/json/Automate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; Try { (new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex; Start-AutomateDiagnostics -ltposh '"+getLTPoSh()+"' -automate_server '"+getLTServer()+"'} Catch { $_.Exception.Message; Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }"; break;
+		case "sh/bash/json/Automate": return "curl -s "+getLinuxDiagnosticsURL()+" | python"; break;
     	default: throw "unknown os";
 	}
 }
