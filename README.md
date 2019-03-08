@@ -2,6 +2,7 @@
 Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extension utilizes the Labtech-Powershell-Module to review CWA agent settings and service statuses. The extension will also perform automatic service repairs and updates.
 
 ## Features
+- NEW - Mac OS X/Linux Agent Reporting
 - Forces agent updates using Update-LTService
 - Verifies LTService and LTSVCmon services are running and set to Automatic. Will start services and set StartMode to Automatic.
 - Verifies checkin and heartbeat times.
@@ -25,6 +26,7 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 ## Usage
 - Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot). RanCommand events are parsed for JSON output and the version number is stored in CustomProperty7. Agent ID is stored as CustomProperty6. (NOTE: To rename the custom properties or reset the Session group, set the createdVersionSessionGroup setting to false)
 - Script can be manually invoked from the Automate tab on the Host screen or in the drop down menu when selecting sessions.
+
 ![example](https://i.snag.gy/P21qyJ.jpg)
 
 ## Credit
