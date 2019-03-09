@@ -25,6 +25,13 @@ elif platform.system() == 'Linux':
 	status = os.system('service ltechagent status')
 	if status == 0:
 		statusname = "Running"
+	elif status == 3:
+		os.system('service ltechagent restart')
+		status = os.system('service ltechagent status')
+		if status == 0:
+			statusname = "Running"
+		else:
+			statusname = "Stopped"
 	else:
 		statusname = "Stopped"
 	svc_ltsvc = { "Status": statusname, "User": "ltechagent", "Start Mode": "Auto"}
