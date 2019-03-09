@@ -22,8 +22,12 @@ if platform.system() == 'Darwin':
 	else:
 		svc_ltsvc = { "Status": "Stopped", "User": "com.labtechsoftware.LTSvc", "Start Mode": "Auto"}
 elif platform.system() == 'Linux':
-	print("Linux")
-
+	status = os.system('service ltechagent status')
+	if status == 0:
+		statusname = "Running"
+	else:
+		statusname = "Stopped"
+	svc_ltsvc = { "Status": statusname, "User": "ltechagent", "Start Mode": "Auto"}
 
 diag_result = { 
 	'server_addr': data["last_good_server_url"], 
