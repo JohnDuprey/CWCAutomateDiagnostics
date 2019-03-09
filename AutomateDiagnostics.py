@@ -26,7 +26,8 @@ elif platform.system() == 'Linux':
 	if status == 0:
 		statusname = "Running"
 	elif status == 3:
-		os.system('service ltechagent restart')
+		os.system('service ltechagent stop')
+		os.system('service ltechagent start')
 		status = os.system('service ltechagent status')
 		if status == 0:
 			statusname = "Running"
