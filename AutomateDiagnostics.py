@@ -18,9 +18,15 @@ last_contact = "{0}/{1}/{2} {3}:{4:02d}:{5:02d}".format(lc["day_of_month"],lc["m
 # Check services
 if platform.system() == 'Darwin':
 	if system_call("launchctl list | grep com.labtechsoftware.LTSvc") != "":
-		svc_ltsvc = { "Status": "Running", "User": "com.labtechsoftware.LTSvc", "Start Mode": "Auto"}
+		statusname = "Running"
 	else:
-		svc_ltsvc = { "Status": "Stopped", "User": "com.labtechsoftware.LTSvc", "Start Mode": "Auto"}
+		os.system("launchctl stop com.labtechsoftware.LTSvc")
+		os.system("launchctl start com.labtechsoftware.LTSvc")
+		if system_call("launchctl list | grep com.labtechsoftware.LTSvc") != "":
+			statusname = "Running"
+		else:
+			statusname = "Stopped"
+	svc_ltsvc = { "Status": statusname, "User": "com.labtechsoftware.LTSvc", "Start Mode": "Auto"}
 elif platform.system() == 'Linux':
 	status = os.system('service ltechagent status')
 	if status == 0:
