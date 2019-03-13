@@ -436,14 +436,14 @@ Function Start-AutomateDiagnostics {
         }
         Catch { # LTPosh loaded, issue with agent
             $_.Exception.Message
-            $repair = if (!($ltsvc_path_exists) -or $ltsvcmon_check.Status -eq "Not Detected" -or $ltservice_check.Status -eq "Not Detected") { "Reinstall" } else { "Restart" }
+            $repair = if (!($ltsvc_path_exists) -or $ltsvcmon_check.Status -eq "Not Detected" -or $ltservice_check.Status -eq "Not Detected" -or $null -eq $id) { "Reinstall" } else { "Restart" }
             $diag = @{
                 'id' = $id
                 'svc_ltservice' = $ltservice_check
                 'svc_ltsvcmon' = $ltsvcmon_check
                 'ltposh_loaded' = $ltposh_loaded
                 'server_addr' = $server
-                'version' = 'Agent error'
+                'version' = $version
                 'ltsvc_path_exists' = $ltsvc_path_exists
                 'locationid' = $locationid
                 'clientid' = $clientid
