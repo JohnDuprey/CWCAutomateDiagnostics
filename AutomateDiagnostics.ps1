@@ -383,15 +383,15 @@ Function Start-AutomateDiagnostics {
                 $server_msg = "No automate servers detected"
             }
             elseif ($server_test -eq $false -and $servers.Count -gt 0) {
-                $server_msg = "Error running Automate server tests"
+                $server_msg = "Error"
                 if (!($compare_test)) {
-                    $server_msg = "$server_msg | Server address not matched"
+                    $server_msg = $server_msg + " | Server address not matched"
                 }
                 if (!($conn_test)) {
-                    $server_msg = "$server_msg | Ping failure"
+                    $server_msg = $server_msg + " | Ping failure"
                 }
                 if ($target_version -eq "") {
-                    $server_msg = "$server_msg | Version check fail"
+                    $server_msg = $server_msg + " | Version check fail"
                 }
             }
 
