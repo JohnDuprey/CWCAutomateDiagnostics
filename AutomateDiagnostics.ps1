@@ -260,8 +260,8 @@ Function Start-AutomateDiagnostics {
         $automate_server = ""
     )
     
-    # Add some wait time in to allow registry to populate
-    Start-Sleep -Seconds 15
+    # Force checkin
+    sc.exe control ltservice 136
 
     # Get powershell version
 	$psver = Get-PSVersion
