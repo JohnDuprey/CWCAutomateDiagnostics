@@ -261,7 +261,7 @@ Function Start-AutomateDiagnostics {
     )
     
     # Add some wait time in to allow registry to populate
-    Start-Sleep -Seconds 30
+    Start-Sleep -Seconds 15
 
     # Get powershell version
 	$psver = Get-PSVersion
@@ -328,6 +328,7 @@ Function Start-AutomateDiagnostics {
             If ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped" -or !($heartbeat) -or !($online)) {
                 Start-Sleep -Seconds 60
                 Try { Restart-LTService -Confirm:$false } Catch {}
+                sc.exe control ltservice 136
                 Start-Sleep -Seconds 60
                 $info = Get-LTServiceInfo
                 $ltservice_check = serviceCheck('LTService')
@@ -383,6 +384,15 @@ Function Start-AutomateDiagnostics {
             }
             elseif ($server_test -eq $false -and $servers.Count -gt 0) {
                 $server_msg = "Error running Automate server tests"
+                if (!($compare_test)) {
+                    $server_msg = " | Server address not matched"
+                }
+                if (!($conn_test)) {
+                    $server_msg = " | Ping failure"
+                }
+                if ($target_version -eq "") {
+                    $server_msg = " | Version check fail"
+                }
             }
 
             # Check updates
@@ -398,6 +408,7 @@ Function Start-AutomateDiagnostics {
                     Update-LTService -WarningVariable updatewarn
                     Start-Sleep -Seconds 60
                     Try { Restart-LTService -Confirm:$false } Catch {}
+                    sc.exe control ltservice 136
                     Start-Sleep -Seconds 300
                     
                     $info = Get-LTServiceInfo
@@ -437,6 +448,7 @@ Function Start-AutomateDiagnostics {
         Catch { # LTPosh loaded, issue with agent
             $_.Exception.Message
             $repair = if (!($ltsvc_path_exists) -or $ltsvcmon_check.Status -eq "Not Detected" -or $ltservice_check.Status -eq "Not Detected" -or $null -eq $id) { "Reinstall" } else { "Restart" }
+            if ($null -eq $version -or $ltsvc_path_exists -eq $false) { $version = "Agent error" }
             $diag = @{
                 'id' = $id
                 'svc_ltservice' = $ltservice_check
