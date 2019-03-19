@@ -261,7 +261,7 @@ Function Start-AutomateDiagnostics {
     )
     
     # Force checkin
-    sc.exe control ltservice 136
+    sc.exe control ltservice 136 | Out-Null
 
     # Get powershell version
 	$psver = Get-PSVersion
@@ -328,7 +328,7 @@ Function Start-AutomateDiagnostics {
             If ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped" -or !($heartbeat) -or !($online)) {
                 Start-Sleep -Seconds 60
                 Try { Restart-LTService -Confirm:$false } Catch {}
-                sc.exe control ltservice 136
+                sc.exe control ltservice 136 | Out-Null
                 Start-Sleep -Seconds 60
                 $info = Get-LTServiceInfo
                 $ltservice_check = serviceCheck('LTService')
@@ -408,7 +408,7 @@ Function Start-AutomateDiagnostics {
                     Update-LTService -WarningVariable updatewarn
                     Start-Sleep -Seconds 60
                     Try { Restart-LTService -Confirm:$false } Catch {}
-                    sc.exe control ltservice 136
+                    sc.exe control ltservice 136 | Out-Null
                     Start-Sleep -Seconds 300
                     
                     $info = Get-LTServiceInfo
