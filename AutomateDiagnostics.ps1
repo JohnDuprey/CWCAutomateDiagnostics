@@ -1,8 +1,15 @@
 # WMI Service check and start/auto
 Function serviceCheck($service){
-    $svc_info = Get-WmiObject win32_service | where-object {$_.name -eq $service}
-    if ($null -ne $svc_info.State) { @{'Status' = $svc_info.State; 'Start Mode' = $svc_info.StartMode; 'User' = $svc_info.StartName} }
-    else {@{'Status' = 'Not Detected'; 'Start Mode' = ""; 'User' = ""}}
+    Write-Verbose "Checking $service"
+    Try {
+        $svc_info = Get-WmiObject win32_service | where-object {$_.name -eq $service}
+        if ($null -ne $svc_info.State) { @{'Status' = $svc_info.State; 'Start Mode' = $svc_info.StartMode; 'User' = $svc_info.StartName} }
+        else {@{'Status' = 'Not Detected'; 'Start Mode' = ""; 'User' = ""}}
+    }
+    Catch {
+        Write-Verbose $Error[0].exception.GetType().fullname
+        @{"Status" = "WMI Error"; "Start Mode" = ""; "User" = ""}
+    }
 }
 
 # Check PS Version
@@ -56,11 +63,9 @@ function GetNumberOrString {
         $InputObject -is [System.Decimal] -or $InputObject -is [System.Double] -or `
         $InputObject -is [System.Single] -or $InputObject -is [long] -or `
         ($Script:CoerceNumberStrings -and $InputObject -match $Script:NumberRegex)) {
-        Write-Verbose -Message "Got a number as end value."
         "$InputObject"
     }
     else {
-        Write-Verbose -Message "Got a string as end value."
         """$(FormatString -String $InputObject)"""
     }
 }
@@ -71,51 +76,38 @@ function ConvertToJsonInternal {
         [Int32] $WhiteSpacePad = 0)
     [String] $Json = ""
     $Keys = @()
-    Write-Verbose -Message "WhiteSpacePad: $WhiteSpacePad."
     if ($null -eq $InputObject) {
-        Write-Verbose -Message "Got 'null' in `$InputObject in inner function"
         $null
     }
     elseif ($InputObject -is [Bool] -and $InputObject -eq $true) {
-        Write-Verbose -Message "Got 'true' in `$InputObject in inner function"
         $true
     }
     elseif ($InputObject -is [Bool] -and $InputObject -eq $false) {
-        Write-Verbose -Message "Got 'false' in `$InputObject in inner function"
         $false
     }
     elseif ($InputObject -is [HashTable]) {
         $Keys = @($InputObject.Keys)
-        Write-Verbose -Message "Input object is a hash table (keys: $($Keys -join ', '))."
     }
     elseif ($InputObject.GetType().FullName -eq "System.Management.Automation.PSCustomObject") {
         $Keys = @(Get-Member -InputObject $InputObject -MemberType NoteProperty |
             Select-Object -ExpandProperty Name)
-        Write-Verbose -Message "Input object is a custom PowerShell object (properties: $($Keys -join ', '))."
     }
     elseif ($InputObject.GetType().Name -match '\[\]|Array') {
-        Write-Verbose -Message "Input object appears to be of a collection/array type."
-        Write-Verbose -Message "Building JSON for array input object."
         #$Json += " " * ((4 * ($WhiteSpacePad / 4)) + 4) + "[`n" + (($InputObject | ForEach-Object {
         $Json += "[`n" + (($InputObject | ForEach-Object {
             if ($null -eq $_) {
-                Write-Verbose -Message "Got null inside array."
                 " " * ((4 * ($WhiteSpacePad / 4)) + 4) + "null"
             }
             elseif ($_ -is [Bool] -and $_ -eq $true) {
-                Write-Verbose -Message "Got 'true' inside array."
                 " " * ((4 * ($WhiteSpacePad / 4)) + 4) + "true"
             }
             elseif ($_ -is [Bool] -and $_ -eq $false) {
-                Write-Verbose -Message "Got 'false' inside array."
                 " " * ((4 * ($WhiteSpacePad / 4)) + 4) + "false"
             }
             elseif ($_ -is [HashTable] -or $_.GetType().FullName -eq "System.Management.Automation.PSCustomObject" -or $_.GetType().Name -match '\[\]|Array') {
-                Write-Verbose -Message "Found array, hash table or custom PowerShell object inside array."
                 " " * ((4 * ($WhiteSpacePad / 4)) + 4) + (ConvertToJsonInternal -InputObject $_ -WhiteSpacePad ($WhiteSpacePad + 4)) -replace '\s*,\s*$' #-replace '\ {4}]', ']'
             }
             else {
-                Write-Verbose -Message "Got a number or string inside array."
                 $TempJsonString = GetNumberOrString -InputObject $_
                 " " * ((4 * ($WhiteSpacePad / 4)) + 4) + $TempJsonString
             }
@@ -123,61 +115,46 @@ function ConvertToJsonInternal {
         }) -join ",`n") + "`n$(" " * (4 * ($WhiteSpacePad / 4)))],`n"
     }
     else {
-        Write-Verbose -Message "Input object is a single element (treated as string/number)."
         GetNumberOrString -InputObject $InputObject
     }
     if ($Keys.Count) {
-        Write-Verbose -Message "Building JSON for hash table or custom PowerShell object."
         $Json += "{`n"
         foreach ($Key in $Keys) {
             # -is [PSCustomObject]) { # this was buggy with calculated properties, the value was thought to be PSCustomObject
             if ($null -eq $InputObject.$Key) {
-                Write-Verbose -Message "Got null as `$InputObject.`$Key in inner hash or PS object."
                 $Json += " " * ((4 * ($WhiteSpacePad / 4)) + 4) + """$Key"": null,`n"
             }
             elseif ($InputObject.$Key -is [Bool] -and $InputObject.$Key -eq $true) {
-                Write-Verbose -Message "Got 'true' in `$InputObject.`$Key in inner hash or PS object."
                 $Json += " " * ((4 * ($WhiteSpacePad / 4)) + 4) + """$Key"": true,`n"            }
             elseif ($InputObject.$Key -is [Bool] -and $InputObject.$Key -eq $false) {
-                Write-Verbose -Message "Got 'false' in `$InputObject.`$Key in inner hash or PS object."
                 $Json += " " * ((4 * ($WhiteSpacePad / 4)) + 4) + """$Key"": false,`n"
             }
             elseif ($InputObject.$Key -is [HashTable] -or $InputObject.$Key.GetType().FullName -eq "System.Management.Automation.PSCustomObject") {
-                Write-Verbose -Message "Input object's value for key '$Key' is a hash table or custom PowerShell object."
                 $Json += " " * ($WhiteSpacePad + 4) + """$Key"":`n$(" " * ($WhiteSpacePad + 4))"
                 $Json += ConvertToJsonInternal -InputObject $InputObject.$Key -WhiteSpacePad ($WhiteSpacePad + 4)
             }
             elseif ($InputObject.$Key.GetType().Name -match '\[\]|Array') {
-                Write-Verbose -Message "Input object's value for key '$Key' has a type that appears to be a collection/array."
-                Write-Verbose -Message "Building JSON for ${Key}'s array value."
                 $Json += " " * ($WhiteSpacePad + 4) + """$Key"":`n$(" " * ((4 * ($WhiteSpacePad / 4)) + 4))[`n" + (($InputObject.$Key | ForEach-Object {
-                    #Write-Verbose "Type inside array inside array/hash/PSObject: $($_.GetType().FullName)"
                     if ($null -eq $_) {
-                        Write-Verbose -Message "Got null inside array inside inside array."
                         " " * ((4 * ($WhiteSpacePad / 4)) + 8) + "null"
                     }
                     elseif ($_ -is [Bool] -and $_ -eq $true) {
-                        Write-Verbose -Message "Got 'true' inside array inside inside array."
                         " " * ((4 * ($WhiteSpacePad / 4)) + 8) + "true"
                     }
                     elseif ($_ -is [Bool] -and $_ -eq $false) {
-                        Write-Verbose -Message "Got 'false' inside array inside inside array."
                         " " * ((4 * ($WhiteSpacePad / 4)) + 8) + "false"
                     }
                     elseif ($_ -is [HashTable] -or $_.GetType().FullName -eq "System.Management.Automation.PSCustomObject" `
                         -or $_.GetType().Name -match '\[\]|Array') {
-                        Write-Verbose -Message "Found array, hash table or custom PowerShell object inside inside array."
                         " " * ((4 * ($WhiteSpacePad / 4)) + 8) + (ConvertToJsonInternal -InputObject $_ -WhiteSpacePad ($WhiteSpacePad + 8)) -replace '\s*,\s*$'
                     }
                     else {
-                        Write-Verbose -Message "Got a string or number inside inside array."
                         $TempJsonString = GetNumberOrString -InputObject $_
                         " " * ((4 * ($WhiteSpacePad / 4)) + 8) + $TempJsonString
                     }
                 }) -join ",`n") + "`n$(" " * (4 * ($WhiteSpacePad / 4) + 4 ))],`n"
             }
             else {
-                Write-Verbose -Message "Got a string inside inside hashtable or PSObject."
                 # '\\(?!["/bfnrt]|u[0-9a-f]{4})'
                 $TempJsonString = GetNumberOrString -InputObject $InputObject.$Key
                 $Json += " " * ((4 * ($WhiteSpacePad / 4)) + 4) + """$Key"": $TempJsonString,`n"
@@ -211,32 +188,26 @@ function ConvertTo-STJson {
     process {
         # Hacking on pipeline support ...
         if ($_) {
-            Write-Verbose -Message "Adding object to `$Collection. Type of object: $($_.GetType().FullName)."
             $Collection += $_
         }
     }
     end {
         if ($Collection.Count) {
-            Write-Verbose -Message "Collection count: $($Collection.Count), type of first object: $($Collection[0].GetType().FullName)."
             $JsonOutput = ConvertToJsonInternal -InputObject ($Collection | ForEach-Object { $_ })
         }
         else {
             $JsonOutput = ConvertToJsonInternal -InputObject $InputObject
         }
         if ($null -eq $JsonOutput) {
-            Write-Verbose -Message "Returning `$null."
             return $null # becomes an empty string :/
         }
         elseif ($JsonOutput -is [Bool] -and $JsonOutput -eq $true) {
-            Write-Verbose -Message "Returning `$true."
             [Bool] $true # doesn't preserve bool type :/ but works for comparisons against $true
         }
         elseif ($JsonOutput-is [Bool] -and $JsonOutput -eq $false) {
-            Write-Verbose -Message "Returning `$false."
             [Bool] $false # doesn't preserve bool type :/ but works for comparisons against $false
         }
         elseif ($Compress) {
-            Write-Verbose -Message "Compress specified."
             (
                 ($JsonOutput -split "\n" | Where-Object { $_ -match '\S' }) -join "`n" `
                     -replace '^\s*|\s*,\s*$' -replace '\ *\]\ *$', ']'
@@ -253,26 +224,40 @@ function ConvertTo-STJson {
     }
 }
 
+Function Invoke-CheckIn {
+    $servicecmd = (Join-Path $env:windir "\system32\sc.exe")
+    # Force check-in
+    Try {
+        & $servicecmd control ltservice 136 | Out-Null
+    }
+    catch { Write-Output "Error sending checkin"}
+}
 
 Function Start-AutomateDiagnostics {
 	Param(
         $ltposh = "http://bit.ly/LTPoSh",
-        $automate_server = ""
+        $automate_server = "",
+        [switch]$verbose = $false
     )
-    
-    # Force checkin
-    sc.exe control ltservice 136 | Out-Null
+
+    if ($verbose) {
+        $VerbosePreference = "Continue"
+    }
+
+    # Initial checkin
+    Invoke-CheckIn
 
     # Get powershell version
 	$psver = Get-PSVersion
     
+    Write-Verbose "Loading LTPosh"
     Try { 
 		(new-object Net.WebClient).DownloadString($ltposh) | Invoke-Expression 
 		$ltsvcinfo = Get-Command -ListImported -Name Get-LTServiceInfo		
 		$ltposh_loaded = $true
 	} 
 	Catch {
-		$_.Exception.Message
+		Write-Verbose $Error[0].exception.GetType().fullname
 		$ltposh_loaded = $false
 	}
     If ($ltposh_loaded -eq $false -and $ltposh -ne "http://bit.ly/LTPoSh") {
@@ -284,8 +269,8 @@ Function Start-AutomateDiagnostics {
 			$ltposh_loaded = $true
 		} 
 		Catch {
-			$_.Exception.Message
-			$ltposh_loaded = $false
+            Write-Verbose $Error[0].exception.GetType().fullname
+            $ltposh_loaded = $false
 		}
     }
 
@@ -317,18 +302,30 @@ Function Start-AutomateDiagnostics {
             
             # Split server list
             $servers = ($info.'Server Address').Split('|')
+
             $online = $lastsuccess -ge $online_threshold
             $heartbeat_rcv = $lasthbrcv -ge $heartbeat_threshold 
             $heartbeat_snd = $lasthbsent -ge $heartbeat_threshold
             $heartbeat = $heartbeat_rcv -or $heartbeat_snd
             $heartbeat_status = $info.HeartbeatLastSent
-
             
+            # Check for persistent TCP connection
+            Try {
+                if ($psver -ge [version]"3.0.0.0" -and $heartbeat -eq $false) { # Check network sockets for established connection from ltsvc to server
+                    Write-Verbose "Heartbeat failed, checking for TCP tunnel"
+                    $socket = Get-Process -processname "ltsvc" | Foreach-Object { $process = $_.ID; Get-NetTCPConnection | Where-Object {$_.State -eq "Established" -and $_.RemotePort -eq 443 -and $_.OwningProcess -eq $process}}
+                    if ($socket.State -eq 'Established') {
+                        $heartbeat = $true
+                        $heartbeat_status = "Socket Established"
+                    }
+                }
+            } Catch {}
+
             # If services are stopped, use Restart-LTService to get them working again
             If ($ltservice_check.Status -eq "Stopped" -or $ltsvcmon_check -eq "Stopped" -or !($heartbeat) -or !($online)) {
-                Start-Sleep -Seconds 60
-                Try { Restart-LTService -Confirm:$false } Catch {}
-                sc.exe control ltservice 136 | Out-Null
+                Write-Verbose "Issuing Restart-LTService and sending checkin"
+                Restart-LTService
+                Invoke-CheckIn
                 Start-Sleep -Seconds 60
                 $info = Get-LTServiceInfo
                 $ltservice_check = serviceCheck('LTService')
@@ -343,39 +340,35 @@ Function Start-AutomateDiagnostics {
                 $heartbeat = $heartbeat_rcv -or $heartbeat_snd
                 $heartbeat_status = $info.HeartbeatLastSent
             }
-            Try {
-                # Check for persistent TCP connection
-                if ($psver -ge [version]"3.0.0.0" -and $heartbeat -eq $false) { # Check network sockets for established connection from ltsvc to server
-                    $socket = Get-Process -processname "ltsvc" | Foreach-Object { $process = $_.ID; Get-NetTCPConnection | Where-Object {$_.State -eq "Established" -and $_.RemotePort -eq 443 -and $_.OwningProcess -eq $process}}
-                    if ($socket.State -eq 'Established') {
-                        $heartbeat = $true
-                        $heartbeat_status = "Socket Established"
-                    }
-                }
-            } Catch {}
 
             # Get server list
             $server_test = $false
             foreach ($server in $servers) {
+                Write-Verbose "Server: $server"
                 $hostname = extractHostname($server)
-                
+                Write-Verbose "Hostname: $hostname"
                 if (!($hostname) -or $hostname -eq "" -or $null -eq $hostname) {
+                    Write-Verbose "Error with hostname"
                     continue
                 }
                 else {
-                    Try {
-                        $compare_test = if (($hostname -eq $automate_server -and $automate_server -ne "") -or $automate_server -eq "") { $true } else { $false }
-                        $conn_test = Test-Connection $hostname
+                    $compare_test = if (($hostname -eq $automate_server -and $automate_server -ne "") -or $automate_server -eq "") { $true } else { $false }
+                    Try { $conn_test = Test-Connection $hostname } Catch { 
+                        Write-Verbose "Ping test failed"
+                        $conn_test = $false 
+                    }
+                    Try { 
                         $ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
                         $target_version = $ver_test.Split('|')[6]
-                        if ($conn_test -and $target_version -ne "" -and $compare_test) {
-                            $server_test = $true
-                            $server_msg = "$server passed all checks"
-                            break
-                        }
                     }
-                    Catch {
-                        continue
+                    Catch { 
+                        Write-Verbose "Unable to obtain target version"
+                        $target_version = "" 
+                    }
+                    if ($conn_test -and $target_version -ne "" -and $compare_test) {
+                        $server_test = $true
+                        $server_msg = "$server passed all checks"
+                        break
                     }
                 }
             }
@@ -401,6 +394,7 @@ Function Start-AutomateDiagnostics {
                 $update_text = "Version {0} - Latest" -f $info.Version
             }
             else {
+                Write-Verbose "Starting update"
                 taskkill /im ltsvc.exe /f
                 taskkill /im ltsvcmon.exe /f
                 taskkill /im lttray.exe /f
@@ -408,7 +402,7 @@ Function Start-AutomateDiagnostics {
                     Update-LTService -WarningVariable updatewarn
                     Start-Sleep -Seconds 60
                     Try { Restart-LTService -Confirm:$false } Catch {}
-                    sc.exe control ltservice 136 | Out-Null
+                    Invoke-CheckIn
                     Start-Sleep -Seconds 300
                     
                     $info = Get-LTServiceInfo
@@ -417,7 +411,7 @@ Function Start-AutomateDiagnostics {
                         $update_text = 'Updated from {1} to {0}' -f $info.Version,$current_version
                     }
                     else {
-                        $update_text = 'Error updating to {0}, still on {1}' -f $target_version,$info.Version
+                        $update_text = 'Error updating, still on {0}' -f $info.Version
                     }
                 }
                 Catch {

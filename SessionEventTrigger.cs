@@ -13,8 +13,9 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 {
 	public Proc GetDeferredActionIfApplicable(SessionEventTriggerEvent sessionEventTriggerEvent)
 	{
+		var maintenance = ExtensionContext.Current.GetSettingValue("MaintenanceMode");
 		if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected && 
-			sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest) {
+			sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest && maintenance == "0") {
 				return (Proc)delegate
 				{
 					var sessionDetails = SessionManagerPool.Demux.GetSessionDetails(sessionEventTriggerEvent.Session.SessionID);
@@ -24,15 +25,13 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 						var linuxdiag = ExtensionContext.Current.GetSettingValue("PathToMacLinuxDiag");
 						var server = ExtensionContext.Current.GetSettingValue("AutomateHostname");
 						var os = sessionDetails.Session.GuestInfo.OperatingSystemName;
-						//var_dump(sessionDetails);
-						//var_dump(sessionDetails.Session.GuestInfo);
 						var command = "";
 
 						if ( os.StartsWith("Windows") ) { 
-							command = "#!ps\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; Try {(new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"' -automate_server '"+server+"'} Catch { $_.Exception.Message; Write-Host '!---BEGIN JSON---!'; Write-Host '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
+							command = "#!ps\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; Try {(new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"' -automate_server '"+server+"'} Catch { $_.Exception.Message; Write-Output '!---BEGIN JSON---!'; Write-Output '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
 						}
 						else if ( os.StartsWith("Mac") || os.StartsWith("Linux") ) {
-							command = "#!sh\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\n echo "+os+"; url="+linuxdiag+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $url; echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi";
+							command = "#!sh\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\nCURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $url; echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi";
 						}
 						else { command = "echo No OS Detected, try running the diagnostic again"; }
 						

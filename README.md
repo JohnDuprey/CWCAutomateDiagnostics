@@ -1,8 +1,11 @@
 # CWCAutomateDiagnostics
 Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extension utilizes the Labtech-Powershell-Module to review CWA agent settings and service statuses. The extension will also perform automatic service repairs and updates.
 
+<img src="https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/Promote.png" width="200" />
+
 ## Features
-- NEW - Mac OS X/Linux Agent Reporting
+- NEW - Maintenance Mode - Disable diagnostics on GuestConnect event
+- Mac OS X/Linux Agent Reporting
 - Forces agent updates using Update-LTService
 - Verifies LTService and LTSVCmon services are running and set to Automatic. Will start services and set StartMode to Automatic.
 - Verifies checkin and heartbeat times.
@@ -11,7 +14,7 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 - Provides custom Session Group that sorts endpoints by CWA version number.
 
 ## Installation
-- This extension has been submitted to ConnectWise for approval for the Marketplace
+- Install Automate Diagnostics from the ConnectWise Control Marketplace (v1.0.3.10)
 
 ### Manual Instructions
 1. Create a new directory for the extension - %programfiles(x86)%\ScreenConnect\App_Extensions\e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76
@@ -28,6 +31,9 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 - Script can be manually invoked from the Automate tab on the Host screen or in the drop down menu when selecting sessions.
 
 ![example](https://i.snag.gy/P21qyJ.jpg)
+
+## Troubleshooting
+Set Verbose = 1 in the Extension settings to log more data for on-demand diagnostics. This does not apply to Guest Connect events.
 
 ## Credit
 - CTaylor's Labtech-Powershell-Module - https://github.com/LabtechConsulting/LabTech-Powershell-Module 
