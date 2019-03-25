@@ -28,8 +28,11 @@ function extractHostname($url) {
     if ($url -eq "") {
         $false
     }
-    else {
+    elseif ($url -match "^http.+$") {
 	    ([System.Uri]"$url").Authority
+    }
+    else {
+        $url
     }
 }
 
