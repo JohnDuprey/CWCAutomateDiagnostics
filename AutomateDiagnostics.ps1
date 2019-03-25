@@ -32,6 +32,7 @@ function extractHostname($url) {
 	    ([System.Uri]"$url").Authority
     }
     else {
+        Write-Verbose "Warning, server address does not supply http(s). Modify your agent template accordingly and run Update Config."
         $url
     }
 }
@@ -260,7 +261,8 @@ Function Start-AutomateDiagnostics {
 		$ltposh_loaded = $true
 	} 
 	Catch {
-		Write-Verbose $Error[0].exception.GetType().fullname
+        Write-Verbose $Error[0].exception.GetType().fullname
+        Write-Verbose $_.Exception.Message
 		$ltposh_loaded = $false
 	}
     If ($ltposh_loaded -eq $false -and $ltposh -ne "http://bit.ly/LTPoSh") {
@@ -273,6 +275,7 @@ Function Start-AutomateDiagnostics {
 		} 
 		Catch {
             Write-Verbose $Error[0].exception.GetType().fullname
+            Write-Verbose $_.Exception.Message
             $ltposh_loaded = $false
 		}
     }
