@@ -234,7 +234,7 @@ Function Invoke-CheckIn {
     Try {
         & $servicecmd control ltservice 136 | Out-Null
     }
-    catch { Write-Output "Error sending checkin"}
+    catch { Write-Verbose "Error sending checkin"}
 }
 
 Function Start-AutomateDiagnostics {

@@ -16,54 +16,32 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 		var maintenance = ExtensionContext.Current.GetSettingValue("MaintenanceMode");
 		if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected && 
 			sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest && maintenance == "0") {
-				return (Proc)delegate
-				{
-					var sessionDetails = SessionManagerPool.Demux.GetSessionDetails(sessionEventTriggerEvent.Session.SessionID);
-					if (sessionDetails.Session.SessionType == SessionType.Access) {
-						var ltposh = ExtensionContext.Current.GetSettingValue("PathToLTPoSh");
-						var diag = ExtensionContext.Current.GetSettingValue("PathToDiag");
-						var linuxdiag = ExtensionContext.Current.GetSettingValue("PathToMacLinuxDiag");
-						var server = ExtensionContext.Current.GetSettingValue("AutomateHostname");
-						var os = sessionDetails.Session.GuestInfo.OperatingSystemName;
-						var command = "";
-
-						if ( os.StartsWith("Windows") ) { 
-							command = "#!ps\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; Try {(new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"' -automate_server '"+server+"'} Catch { $_.Exception.Message; Write-Output '!---BEGIN JSON---!'; Write-Output '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
-						}
-						else if ( os.StartsWith("Mac") || os.StartsWith("Linux") ) {
-							command = "#!sh\n#maxlength=100000\n#timeout=600000\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\nCURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $url; echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi";
-						}
-						else { command = "echo No OS Detected, try running the diagnostic again"; }
-						
-						SessionManagerPool.Demux.AddSessionEvent(
-							sessionEventTriggerEvent.Session.SessionID,
-							new SessionEvent
-							{
-								EventType = SessionEventType.QueuedCommand,
-								Host = "AutomateDiagnostics",
-								Data = command
-							}
-						);
-					}
-				};
+			return (Proc)delegate {	RunDiagnostics(sessionEventTriggerEvent); };
 		}
 		else if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.RanCommand) {
 			return (Proc)delegate
 				{
 					var sessionDetails = SessionManagerPool.Demux.GetSessionDetails(sessionEventTriggerEvent.Session.SessionID);
                     string output = sessionEventTriggerEvent.SessionEvent.Data;
-					var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
-					if (data[1] != "") {
-						DiagOutput diag = Deserialize(data[1]);
-						var session = sessionEventTriggerEvent.Session;
-						if (diag.version != null) {
-							session.CustomPropertyValues[6] = diag.version;
+
+					if (IsDiagnosticContent(output) && IsDiagResult(output)) {
+						var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
+						if (data[1] != "") {
+							DiagOutput diag = Deserialize(data[1]);
+							var session = sessionEventTriggerEvent.Session;
+							if (diag.version != null) {
+								session.CustomPropertyValues[6] = diag.version;
+							}
+							if (diag.id != null) {
+								session.CustomPropertyValues[5] = diag.id;
+							}
+							SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, session.Name, session.IsPublic, session.Code, session.CustomPropertyValues);
 						}
-						if (diag.id != null) {
-							session.CustomPropertyValues[5] = diag.id;
-						}
-						SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, session.Name, session.IsPublic, session.Code, session.CustomPropertyValues);
 					}
+					else if (IsDiagnosticContent(output) && IsRepairResult(output)) {
+						RunDiagnostics(sessionEventTriggerEvent);
+					}
+
 				};
 		}
 		return null;
@@ -75,7 +53,60 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
         	return ser.ReadObject(ms) as DiagOutput;
         }
     }
+	private void RunDiagnostics(SessionEventTriggerEvent sessionEventTriggerEvent) {
+		var sessionDetails = SessionManagerPool.Demux.GetSessionDetails(sessionEventTriggerEvent.Session.SessionID);
+		if (sessionDetails.Session.SessionType == SessionType.Access) {
+			var ltposh = ExtensionContext.Current.GetSettingValue("PathToLTPoSh");
+			var diag = ExtensionContext.Current.GetSettingValue("PathToDiag");
+			var linuxdiag = ExtensionContext.Current.GetSettingValue("PathToMacLinuxDiag");
+			var server = ExtensionContext.Current.GetSettingValue("AutomateHostname");
+			var os = sessionDetails.Session.GuestInfo.OperatingSystemName;
+			var timeout = ExtensionContext.Current.GetSettingValue("Timeout");
+			var command = "";
 
+			if ( os.StartsWith("Windows") ) { 
+				command = "#!ps\n#maxlength=100000\n#timeout="+ timeout +"\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; Try {(new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"' -automate_server '"+server+"'} Catch { $_.Exception.Message; Write-Output '!---BEGIN JSON---!'; Write-Output '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
+			}
+			else if ( os.StartsWith("Mac") || os.StartsWith("Linux") ) {
+				command = "#!sh\n#maxlength=100000\n#timeout="+ timeout +"\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\nurl="+linuxdiag+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi";
+			}
+			else { command = "@echo off\necho No OS Detected, try running the diagnostic again"; }
+			
+			SessionManagerPool.Demux.AddSessionEvent(
+				sessionEventTriggerEvent.Session.SessionID,
+				new SessionEvent
+				{
+					EventType = SessionEventType.QueuedCommand,
+					Host = "AutomateDiagnostics",
+					Data = command
+				}
+			);
+		}
+	}
+	private bool IsDiagnosticContent(string eventData) {
+		if (eventData.StartsWith("DIAGNOSTIC-RESPONSE/1") || eventData.StartsWith("\ufeffDIAGNOSTIC-RESPONSE/1")) {
+			return true;
+		} 
+		else { 
+			return false; 
+		}
+	}
+	private bool IsRepairResult(string eventData) {
+		if (eventData.Contains("DiagnosticType: ReinstallAutomate") || eventData.Contains("DiagnosticType: RestartAutomate")) {
+			return true;
+		}
+		else { 
+			return false; 
+		}
+	}
+	private bool IsDiagResult(string eventData) {
+		if (eventData.Contains("DiagnosticType: Automate")) {
+			return true;
+		}
+		else { 
+			return false; 
+		}
+	}
     private static string FormatMessage(string message) {
         DateTime now = DateTime.Now;
         return string.Format("{0}: {1}", now.ToString(), message);

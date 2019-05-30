@@ -13,7 +13,7 @@ with open("/usr/local/ltechagent/state","r") as read_file:
 
 # Get last contact date
 lc = data["last_contact"]
-last_contact = "{0}/{1}/{2} {3}:{4:02d}:{5:02d}".format(lc["day_of_month"],lc["month"],lc["year"],lc["hour"],lc["min"],lc["sec"])
+last_contact = "{0}/{1}/{2} {3}:{4:02d}:{5:02d}".format(lc["month"],lc["day_of_month"],lc["year"],lc["hour"],lc["min"],lc["sec"])
 
 # Check services
 if platform.system() == 'Darwin':

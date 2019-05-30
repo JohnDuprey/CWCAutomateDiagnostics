@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ExtensionManifest>
-	<Version>1.0.4.5</Version>
+	<Version>1.0.4.15</Version>
 	<Name>Automate Diagnostics</Name>
 	<Author>John Duprey - Complete Network</Author>
 	<ShortDescription>Diagnoses Automate Agents from CW Control. Change the LTPoSh URL in the settings.</ShortDescription>
@@ -30,6 +30,10 @@
 		<Setting Name="MaintenanceMode" IsServerOnly="false">
 			<Description>1 = Enable, 0 = Disable</Description>
 			<DefaultValue>0</DefaultValue>
+		</Setting>
+		<Setting Name="Timeout" IsServerOnly="false">
+			<Description>Diagnostic timeout - Default is 10 minutes (600000ms)</Description>
+			<DefaultValue>600000</DefaultValue>
 		</Setting>
 		<Setting Name="Verbose" IsServerOnly="false">
 			<Description>1 = Enable, 0 = Disable</Description>

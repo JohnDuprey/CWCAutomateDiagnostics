@@ -10,6 +10,11 @@
 	table-layout:fixed;
 }
 
+.HiddenButton { 
+	display: none;
+}
+
+
 .success,
 .failed {
 	font-weight: bold !important;

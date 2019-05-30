@@ -14,7 +14,7 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 - Provides custom Session Group that sorts endpoints by CWA version number.
 
 ## Installation
-- Install Automate Diagnostics from the ConnectWise Control Marketplace (v1.0.3.10)
+- Install Automate Diagnostics from the ConnectWise Control Marketplace (v1.0.4.5)
 
 ### Manual Instructions
 1. Create a new directory for the extension - %programfiles(x86)%\ScreenConnect\App_Extensions\e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76

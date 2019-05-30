@@ -15,6 +15,12 @@
   <data name="Diagnostics.Automate.Button" xml:space="preserve">
     <value>Run CWA Diagnostic</value>
   </data>
+  <data name="Diagnostics.Automate.RestartButton" xml:space="preserve">
+    <value>Restart Automate Agent</value>
+  </data>
+  <data name="Diagnostics.Automate.ReinstallButton" xml:space="preserve">
+    <value>Reinstall Automate Agent</value>
+  </data>
   <data name="Diagnostics.Automate.Label" xml:space="preserve">
     <value>Automate Diagnostics</value>
   </data>

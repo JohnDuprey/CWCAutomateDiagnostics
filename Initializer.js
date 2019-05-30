@@ -16,6 +16,9 @@ function getLinuxDiagnosticsURL() {
 function getLTServer() {
 	return extensionContext.settingValues.AutomateHostname;
 }
+function getTimeout() {
+	return extensionContext.settingValues.Timeout;
+}
 function getVerbose() {
 	if (extensionContext.settingValues.Verbose == "1") { return "-Verbose"; } else { return ""; }
 }
@@ -30,7 +33,14 @@ SC.event.addGlobalHandler(SC.event.QueryCommandButtons, function (eventArgs) {
 			break;
 		case 'HostDetailPopoutPanel':eventArgs.buttonDefinitions.push({commandName: 'GetInfoPer', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.Button']});
 			break;
-		case 'AutomateButtons':eventArgs.buttonDefinitions.push({commandName: 'GetInfo', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.Button']});
+		case 'AutomateButtons':
+			eventArgs.buttonDefinitions.push({commandName: 'GetInfo', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.Button']});
+			break;
+		case 'ReinstallButton':
+			eventArgs.buttonDefinitions.push({commandName: 'ReinstallAutomate', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.ReinstallButton']});
+			break;
+		case 'RestartButton':
+			eventArgs.buttonDefinitions.push({commandName: 'RestartAutomate', commandArgument: 'Automate', text: SC.res['Diagnostics.Automate.RestartButton']});
 			break;
 	}
 });
@@ -72,20 +82,13 @@ SC.event.addGlobalHandler(SC.event.RefreshTab, function (eventArgs) {
 SC.event.addGlobalHandler(SC.event.ExecuteCommand, function (eventArgs) {
 	switch (eventArgs.commandName){
 		case 'GetInfo':
-			window.addEventToSessions(
-				window.getSessionGroupUrlPart()[0], 
-				SC.types.SessionType.Access,
-				[window.getSessionUrlPart()], 
-				SC.types.SessionEventType.QueuedCommand, 
-				null,
-				getAutomateInputCommand(
-					eventArgs.commandArgument.type, 
-					eventArgs.commandArgument.operatingSystemName
-					),
-				false,
-				false,
-				true
-			);
+			sendCommand(eventArgs);
+			break;
+		case 'ReinstallAutomate':
+			showReinstallPrompt();
+			break;
+		case 'RestartAutomate':
+			sendCommand({commandArgument: { type: 'RestartAutomate', operatingSystemName: 'Windows' }});
 			break;
 		case 'GetInfoPer':
 			var checkedOrSelectedRows = Array.prototype.filter.call(($('detailTable') || $('.DetailTable')).rows, function (r) { return SC.ui.isChecked(r) || SC.ui.isSelected(r); });
@@ -125,11 +128,46 @@ SC.event.addGlobalHandler(SC.event.PreRender, function (eventArgs) {
 	}
 });
 
+function showReinstallPrompt() {
+	var locationId = $('#locationid').innerHTML;
+	SC.dialog.showModalDialogRaw('JoinSessionWithOptions',[
+		SC.dialog.createTitlePanel('Reinstall Automate Agent'),
+		SC.dialog.createContentPanel([
+			$dl([
+				$dt('Location ID'),
+				$dd(txtlocationid = $input({ id: "locationidreinstall", type: 'text', value: locationId ? locationId : 1}))
+			])
+		]),
+		buttonPanel = SC.dialog.createButtonPanel('Reinstall')
+	], function (eventArgs, dialog) {
+			SC.dialog.hideModalDialog();
+			sendCommand({commandArgument: { type: 'ReinstallAutomate', operatingSystemName: 'Windows' }});
+	});
+}
+
+
+function sendCommand(eventArgs) {
+	window.addEventToSessions(
+		window.getSessionGroupUrlPart()[0], 
+		SC.types.SessionType.Access,
+		[window.getSessionUrlPart()], 
+		SC.types.SessionEventType.QueuedCommand, 
+		null,
+		getAutomateInputCommand(
+			eventArgs.commandArgument.type, 
+			eventArgs.commandArgument.operatingSystemName
+			),
+		false,
+		false,
+		true
+	);
+}
+
 function getAutomateInputCommand(diagnosticType, operatingSystem) {
 	var headers = getHeaders(operatingSystem);
 	headers.DiagnosticType = diagnosticType;
 	var commandText = getAutomateCommandText(headers);
-	
+	var timeout = getTimeout();
 	var emptyLinePrefix = '';
 	
 	if (headers.Processor == 'sh') 
@@ -140,7 +178,7 @@ function getAutomateInputCommand(diagnosticType, operatingSystem) {
 	
 	return  "#!" + headers.shaBang + "\n" +
 		"#maxlength=100000" + "\n" +
-		"#timeout=600000" + "\n" +
+		"#timeout=" + timeout + "\n" +
 		headers.modifier + "DIAGNOSTIC-RESPONSE/1" + headers.delimiter  + "\n" +
 		headers.modifier + "DiagnosticType: " + headers.DiagnosticType + headers.delimiter  + "\n" +
 		headers.modifier + "ContentType: " + headers.ContentType + headers.delimiter  + "\n" +
@@ -219,7 +257,6 @@ function parseJson(eventData) {
 	return json;
 }
 
-
 function displayDataJson(json) {
 	if ("ltposh_loaded" in json) {
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltposh_row'});
@@ -273,7 +310,13 @@ function displayDataJson(json) {
 	if ("repair" in json) {
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'repair_row'});
 		SC.ui.addElement($('repair_row'), 'th', {id: 'repair_hdr', innerHTML: 'Recommended repair'});
-		SC.ui.addElement($('repair_row'), 'td', {id: 'repair', innerHTML: json["repair"], colspan: 2});
+		var repairCol = SC.ui.addElement($('repair_row'), 'td', {id: 'repair', innerHTML:"", colspan: 2});
+		//var repairButton = {commandName: json["repair"], commandArgument: 'Automate', text: json["repair"]};
+		SC.command.queryAndAddCommandButtons(repairCol, json["repair"] + 'Button');
+		
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'locationid_row'});
+		SC.ui.addElement($('locationid_row'), 'th', {id: 'locationid_hdr', innerHTML: 'Location ID'});
+		SC.ui.addElement($('locationid_row'), 'td', {id: 'locationid', innerHTML:json["locationid"], colspan: 2});
 	}
 }
 
@@ -314,9 +357,14 @@ function timeDifference(current, previous) {
 function getAutomateCommandText(headers) {
 	switch (headers.Processor + '/' + headers.Interface + '/' + headers.ContentType + '/' + headers.DiagnosticType)
 	{
-		case "ps/powershell/json/Automate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; Try { (new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex; Start-AutomateDiagnostics -ltposh '"+getLTPoSh()+"' -automate_server '"+getLTServer()+"' "+getVerbose()+"} Catch { $_.Exception.Message; Write-Output '!---BEGIN JSON---!'; Write-Output '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
-		case "sh/bash/json/Automate": return "url="+getLinuxDiagnosticsURL()+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $url; echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi"; 
+		case "ps/powershell/json/Automate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; Try { (new-object Net.WebClient).DownloadString('"+getAutomateDiagnosticsURL()+"') | iex; Start-AutomateDiagnostics -ltposh '"+getLTPoSh()+"' -automate_server '"+getLTServer()+"' "+getVerbose()+"} Catch { $_.Exception.Message; Write-Output '!---BEGIN JSON---!'; Write-Output '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
+		case "ps/powershell/json/RestartAutomate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; (new-object Net.WebClient).DownloadString('"+getLTPoSh()+"') | iex; Restart-LTService";
+		case "ps/powershell/json/ReinstallAutomate":
+			var txtlocationid = $('#locationidreinstall').value;
+			if (isNaN(txtlocationid)) { txtlocationid = "1"; }
+			return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12};(new-object Net.WebClient).DownloadString('"+getLTPoSh()+"') | iex; Reinstall-LTService -SkipDotNet -Server https://"+getLTServer()+" -LocationID "+txtlocationid;
+			return 
+		case "sh/bash/json/Automate": return "url="+getLinuxDiagnosticsURL()+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi"; 
     	default: throw "unknown os";
 	}
 }
-
