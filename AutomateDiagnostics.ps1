@@ -359,7 +359,7 @@ Function Start-AutomateDiagnostics {
                 }
                 else {
                     $compare_test = if (($hostname -eq $automate_server -and $automate_server -ne "") -or $automate_server -eq "") { $true } else { $false }
-                    Try { $conn_test = Test-Connection $hostname } Catch { 
+                    Try { $conn_test = Test-NetConnection -ComputerName $hostname -Port 443 } Catch { 
                         Write-Verbose "Ping test failed"
                         $conn_test = $false 
                     }
