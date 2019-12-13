@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ExtensionManifest>
-	<Version>1.0.4.15</Version>
+	<Version>1.0.5.1</Version>
 	<Name>Automate Diagnostics</Name>
 	<Author>John Duprey - Complete Network</Author>
 	<ShortDescription>Diagnoses Automate Agents from CW Control. Change the LTPoSh URL in the settings.</ShortDescription>
@@ -29,6 +29,10 @@
 		</Setting>
 		<Setting Name="MaintenanceMode" IsServerOnly="false">
 			<Description>1 = Enable, 0 = Disable</Description>
+			<DefaultValue>0</DefaultValue>
+		</Setting>
+		<Setting Name="SetUseMachineName" IsServerOnly="false">
+			<Description>Fix access session to use machine name - 1 = Enable, 0 = Disable</Description>
 			<DefaultValue>0</DefaultValue>
 		</Setting>
 		<Setting Name="Timeout" IsServerOnly="false">

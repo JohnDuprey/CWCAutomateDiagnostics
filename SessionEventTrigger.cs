@@ -14,6 +14,7 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 	public Proc GetDeferredActionIfApplicable(SessionEventTriggerEvent sessionEventTriggerEvent)
 	{
 		var maintenance = ExtensionContext.Current.GetSettingValue("MaintenanceMode");
+		var usemachinename = ExtensionContext.Current.GetSettingValue("SetUseMachineName");
 		if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected && 
 			sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest && maintenance == "0") {
 			return (Proc)delegate {	RunDiagnostics(sessionEventTriggerEvent); };
@@ -35,7 +36,11 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 							if (diag.id != null) {
 								session.CustomPropertyValues[5] = diag.id;
 							}
-							SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, session.Name, session.IsPublic, session.Code, session.CustomPropertyValues);
+							var sessionname = session.Name;
+							if (usemachinename == "1") {
+								sessionname = "";
+							}
+							SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, sessionname, session.IsPublic, session.Code, session.CustomPropertyValues);
 						}
 					}
 					else if (IsDiagnosticContent(output) && IsRepairResult(output)) {
