@@ -15,8 +15,9 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 	{
 		var maintenance = ExtensionContext.Current.GetSettingValue("MaintenanceMode");
 		var usemachinename = ExtensionContext.Current.GetSettingValue("SetUseMachineName");
+		
 		if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected && 
-			sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest && maintenance == "0") {
+			sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest && maintenance == "0" && sessionEventTriggerEvent.Session.ActiveConnections.Where(_ => _.ProcessType == ProcessType.Host).Count() == 0) {
 			return (Proc)delegate {	RunDiagnostics(sessionEventTriggerEvent); };
 		}
 		else if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.RanCommand) {

@@ -228,6 +228,26 @@ function ConvertTo-STJson {
     }
 }
 
+Function Test-CommandExists {
+    Param ($command)
+    $oldPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'stop'
+    try { if(Get-Command $command ) { $true } }
+    Catch { $false }
+    Finally {$ErrorActionPreference=$oldPreference}
+}
+
+Function Test-JanusLoaded {
+    try { 
+        $janus = get-content $env:windir\ltsvc\lterrors.txt | select-string "Janus" | Select-Object -Last 1 
+        if ($janus -match "Janus enabled") { $true }
+        else {
+            $false
+        }
+    }
+    catch { $false }
+}
+
 Function Invoke-CheckIn {
     $servicecmd = (Join-Path $env:windir "\system32\sc.exe")
     # Force check-in
@@ -291,6 +311,7 @@ Function Start-AutomateDiagnostics {
     $id = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).id } Catch { $null }
     $version = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).version } Catch { $null }
     $server = Try { ((Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop)."Server Address") } Catch { $null }
+    $janus_res = Test-JanusLoaded
 
     if ($ltposh_loaded) {
         # Get ltservice info
@@ -332,7 +353,7 @@ Function Start-AutomateDiagnostics {
                 Write-Verbose "Issuing Restart-LTService and sending checkin"
                 Restart-LTService
                 Invoke-CheckIn
-                Start-Sleep -Seconds 60
+                Start-Sleep -Seconds 15
                 $info = Get-LTServiceInfo
                 $ltservice_check = serviceCheck('LTService')
                 $ltsvcmon_check = serviceCheck('LTSVCMon')
@@ -359,10 +380,19 @@ Function Start-AutomateDiagnostics {
                 }
                 else {
                     $compare_test = if (($hostname -eq $automate_server -and $automate_server -ne "") -or $automate_server -eq "") { $true } else { $false }
-                    Try { $conn_test = Test-NetConnection -ComputerName $hostname -Port 443 } Catch { 
-                        Write-Verbose "Ping test failed"
-                        $conn_test = $false 
+                    if (Test-CommandExists -Command "Test-NetConnection") {
+                        Try { $conn_test = Test-NetConnection -ComputerName $hostname -Port 443 } Catch { 
+                            Write-Verbose "Port test failed"
+                            $conn_test = $false 
+                        }
                     }
+                    else {
+                        Try { $conn_test = Test-Connection -ComputerName $hostname } Catch { 
+                            Write-Verbose "Ping test failed"
+                            $conn_test = $false 
+                        }
+                    }
+
                     Try { 
                         $ver_test = (new-object Net.WebClient).DownloadString("$($server)/labtech/agent.aspx")
                         $target_version = $ver_test.Split('|')[6]
@@ -406,13 +436,12 @@ Function Start-AutomateDiagnostics {
                 taskkill /im lttray.exe /f
                 Try {
                     Update-LTService -WarningVariable updatewarn
-                    Start-Sleep -Seconds 60
+                    Start-Sleep -Seconds 30
                     Try { Restart-LTService -Confirm:$false } Catch {}
                     Invoke-CheckIn
-                    Start-Sleep -Seconds 300
-                    
+                    Start-Sleep -Seconds 30
                     $info = Get-LTServiceInfo
-                    
+                    $janus_res = Test-JanusLoaded
                     if ([version]$info.Version -gt [version]$current_version) {
                         $update_text = 'Updated from {1} to {0}' -f $info.Version,$current_version
                     }
@@ -443,12 +472,14 @@ Function Start-AutomateDiagnostics {
                 'clientid' = $info.ClientID
                 'locationid' = $info.LocationID
                 'ltsvc_path_exists' = $ltsvc_path_exists
+                'janus_status' = $janus_res
             }
         }
         Catch { # LTPosh loaded, issue with agent
             $_.Exception.Message
-            $repair = if (!($ltsvc_path_exists) -or $ltsvcmon_check.Status -eq "Not Detected" -or $ltservice_check.Status -eq "Not Detected" -or $null -eq $id) { "Reinstall" } else { "Restart" }
+            $repair = if (-not ($ltsvc_path_exists) -or $ltsvcmon_check.Status -eq "Not Detected" -or $ltservice_check.Status -eq "Not Detected" -or $null -eq $id -or $janus_res -eq $false) { "Reinstall" } else { "Restart" }
             if ($null -eq $version -or $ltsvc_path_exists -eq $false) { $version = "Agent error" }
+            if ($janus_res -eq $false) { $version = "Janus failure" }
             $diag = @{
                 'id' = $id
                 'svc_ltservice' = $ltservice_check
@@ -460,6 +491,7 @@ Function Start-AutomateDiagnostics {
                 'locationid' = $locationid
                 'clientid' = $clientid
                 'repair' = $repair
+                'janus_status' = $janus_res
             }
         }
     }
@@ -474,6 +506,7 @@ Function Start-AutomateDiagnostics {
             'svc_ltsvcmon' = $ltsvcmon_check
             'ltposh_loaded' = $ltposh_loaded
             'version' = $version
+            'janus_status' = $janus_res
         }
     }
 	Write-Output "!---BEGIN JSON---!"
