@@ -264,16 +264,22 @@ function displayDataJson(json) {
 		SC.ui.addElement($('ltposh_row'), 'td', {id: 'ltposh', innerHTML: (json["ltposh_loaded"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>"});
 	}
 	if ("server_addr" in json) {
-		if (!/Error/i.test(json["server_addr"])) { var server_status = "<span class='success'>✓</span>"; } else { var server_status = "<span class='failed'>✗</span>"; }
+		if (!/Error/i.test(json["server_addr"]) && json["server_addr"] != null) { var server_status = "<span class='success'>✓</span>"; } else { var server_status = "<span class='failed'>✗</span>"; }
+		if (json["server_addr"] != null) {
+			server = json["server_addr"];
+		}
+		else { server = "No Agent Installed"; }
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'server_row'});
 		SC.ui.addElement($('server_row'), 'th', {id: 'server_hdr', innerHTML: 'Server Check'});
-		SC.ui.addElement($('server_row'), 'td', {id: 'server', innerHTML: server_status + " " + json["server_addr"], colspan: 2});
+		SC.ui.addElement($('server_row'), 'td', {id: 'server', innerHTML: server_status + " " + server, colspan: 2});
 	}
 	if ("id" in json) {
-		if (json["id"] > 0) { var agentid_status = "<span class='success'>✓</span>"; } else { var agentid_status = "<span class='failed'>✗</span>"; }
-		SC.ui.addElement($('dataTable'), 'tr', {id: 'agent_id_row'});
-		SC.ui.addElement($('agent_id_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Agent ID'});
-		SC.ui.addElement($('agent_id_row'), 'td', {id: 'agent_id', innerHTML: agentid_status + " " + json["id"]});
+		if (json["id"] != null) {
+			if (json["id"] > 0) { var agentid_status = "<span class='success'>✓</span>"; } else { var agentid_status = "<span class='failed'>✗</span>"; }
+			SC.ui.addElement($('dataTable'), 'tr', {id: 'agent_id_row'});
+			SC.ui.addElement($('agent_id_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Agent ID'});
+			SC.ui.addElement($('agent_id_row'), 'td', {id: 'agent_id', innerHTML: agentid_status + " " + agentid});
+		}
 	}
 	if ("update" in json) {
 		if (!/Error/i.test(json["update"])) { var update_status = "<span class='success'>✓</span>"; } else { var update_status = "<span class='failed'>✗</span>"; }
@@ -294,14 +300,24 @@ function displayDataJson(json) {
 		SC.ui.addElement($('status_row2'), 'td', {id: 'status2', innerHTML: heartbeat_status + " " + json["heartbeat_sent"]});
 	}
 	if ("svc_ltservice" in json) {
-		var ltservice_txt = json["svc_ltservice"]["Status"] + " | " + json["svc_ltservice"]["Start Mode"] + " | " + json["svc_ltservice"]["User"];
+		if (json["svc_ltservice"]["Status"] != "Not Detected") {
+			var ltservice_txt = json["svc_ltservice"]["Status"] + " | " + json["svc_ltservice"]["Start Mode"] + " | " + json["svc_ltservice"]["User"];
+		}
+		else {
+			var ltservice_txt = json["svc_ltservice"]["Status"];
+		}
 		if (json["svc_ltservice"]["Status"] == "Running" && json["svc_ltservice"]["Start Mode"] == "Auto") { var ltservice_status = "<span class='success'>✓</span>"; } else { var ltservice_status = "<span class='failed'>✗</span>"; }
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltsvc_row'});
 		SC.ui.addElement($('ltsvc_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'SVC - LTService'});
 		SC.ui.addElement($('ltsvc_row'), 'td', {id: 'ltsvc', innerHTML: ltservice_status + " " + ltservice_txt});
 	}
 	if ("svc_ltsvcmon" in json) {
-		var ltsvcmon_txt =  json["svc_ltsvcmon"]["Status"] + " | " + json["svc_ltsvcmon"]["Start Mode"] + " | " + json["svc_ltsvcmon"]["User"];
+		if (json["svc_ltsvcmon"]["Status"] != "Not Detected") {
+			var ltsvcmon_txt =  json["svc_ltsvcmon"]["Status"] + " | " + json["svc_ltsvcmon"]["Start Mode"] + " | " + json["svc_ltsvcmon"]["User"];
+		}
+		else {
+			var ltsvcmon_txt =  json["svc_ltsvcmon"]["Status"];
+		}
 		if (json["svc_ltsvcmon"]["Status"] == "Running" && json["svc_ltsvcmon"]["Start Mode"] == "Auto") { var ltsvcmon_status = "<span class='success'>✓</span>"; } else { var ltsvcmon_status = "<span class='failed'>✗</span>"; }
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltsvcmon_row'});
 		SC.ui.addElement($('ltsvcmon_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'SVC - LTSVCMon'});

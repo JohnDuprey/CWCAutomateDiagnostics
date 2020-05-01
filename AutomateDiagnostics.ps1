@@ -414,13 +414,13 @@ Function Start-AutomateDiagnostics {
             elseif ($server_test -eq $false -and $servers.Count -gt 0) {
                 $server_msg = "Error"
                 if (!($compare_test)) {
-                    $server_msg = $server_msg + " | Server address not matched"
+                    $server_msg = $server_msg + " | Server address not matched ($hostname)"
                 }
                 if (!($conn_test)) {
-                    $server_msg = $server_msg + " | Ping failure"
+                    $server_msg = $server_msg + " | Ping failure ($hostname)"
                 }
                 if ($target_version -eq "") {
-                    $server_msg = $server_msg + " | Version check fail"
+                    $server_msg = $server_msg + " | Version check fail ($hostname)"
                 }
             }
 

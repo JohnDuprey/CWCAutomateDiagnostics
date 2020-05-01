@@ -36,8 +36,5 @@ public class Service : WebServiceBase
 				)
 			);
 		});
-
-		var version = 0L;
-		version = SessionManagerPool.Demux.WaitForChange(version, null);
 	}
 }
