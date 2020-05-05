@@ -278,7 +278,7 @@ function displayDataJson(json) {
 			if (json["id"] > 0) { var agentid_status = "<span class='success'>✓</span>"; } else { var agentid_status = "<span class='failed'>✗</span>"; }
 			SC.ui.addElement($('dataTable'), 'tr', {id: 'agent_id_row'});
 			SC.ui.addElement($('agent_id_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Agent ID'});
-			SC.ui.addElement($('agent_id_row'), 'td', {id: 'agent_id', innerHTML: agentid_status + " " + agentid});
+			SC.ui.addElement($('agent_id_row'), 'td', {id: 'agent_id', innerHTML: agentid_status + " " + json["id"]});
 		}
 	}
 	if ("update" in json) {
