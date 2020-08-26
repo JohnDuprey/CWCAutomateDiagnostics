@@ -9,12 +9,13 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 - Forces agent updates using Update-LTService
 - Verifies LTService and LTSVCmon services are running and set to Automatic. Will start services and set StartMode to Automatic.
 - Verifies checkin and heartbeat times.
-- Stores the CWA Agent ID as CustomProperty6.
-- Stores the CWA Version as CustomProperty7.
+- Stores the CWA Agent ID as CustomProperty6 (customizable).
+- Stores the CWA Version as CustomProperty7 (customizable).
 - Provides custom Session Group that sorts endpoints by CWA version number.
+- Repair option now uses InstallerToken, generate a long lived one using this script https://www.mspgeek.com/files/file/50-generate-agent-installertoken/.
 
 ## Installation
-- Install Automate Diagnostics from the ConnectWise Control Marketplace (v1.0.4.5)
+- Install Automate Diagnostics from the ConnectWise Control Marketplace (v1.0.5.7 *latest version is not available yet)
 
 ### Manual Instructions
 1. Create a new directory for the extension - %programfiles(x86)%\ScreenConnect\App_Extensions\e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76
@@ -27,7 +28,7 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 3. Build the URL with the extension Guid and add that to the settings to avoid calling the script from GitHub. (e.g https://control_url:port/App_Extensions/<extension_guid>/AutomateDiagnostics.ps1)
 
 ## Usage
-- Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot). RanCommand events are parsed for JSON output and the version number is stored in CustomProperty7. Agent ID is stored as CustomProperty6. (NOTE: To rename the custom properties or reset the Session group, set the createdVersionSessionGroup setting to false)
+- Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot). RanCommand events are parsed for JSON output and the version number is stored in CustomProperty7. Agent ID is stored as CustomProperty6. (NOTE: To rename the custom properties or reset the Session group, set the createdVersionSessionGroup setting to false, also do this if you change the custom property value number)
 - Script can be manually invoked from the Automate tab on the Host screen or in the drop down menu when selecting sessions.
 
 ![example](https://i.snag.gy/P21qyJ.jpg)
