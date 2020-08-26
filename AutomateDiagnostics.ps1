@@ -248,6 +248,17 @@ Function Test-JanusLoaded {
     catch { $false }
 }
 
+Function Test-FailedSignup {
+    try { 
+        $signup = get-content $env:windir\ltsvc\lterrors.txt | select-string "Failed signup" | Select-Object -Last 1 
+        if ($signup -match "Agent Signup Failed") { $true }
+        else {
+            $false
+        }
+    }
+    catch { $false }
+}
+
 Function Invoke-CheckIn {
     $servicecmd = (Join-Path $env:windir "\system32\sc.exe")
     # Force check-in
@@ -268,6 +279,8 @@ Function Start-AutomateDiagnostics {
         $VerbosePreference = "Continue"
     }
 
+    $signup_failure = $false
+    $janus_res = $false
     # Initial checkin
     Invoke-CheckIn
 
@@ -304,14 +317,20 @@ Function Start-AutomateDiagnostics {
 	$ltservice_check = serviceCheck('LTService')
     $ltsvcmon_check = serviceCheck('LTSVCMon')
 
-    # Get reg keys in case LTPosh fails
+    # Check LTSVC path and lterrors.txt
     $ltsvc_path_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc")
+    $lterrors_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc\lterrors.txt")
+
+    # Get reg keys in case LTPosh fails
     $locationid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).locationid } Catch { $null }
     $clientid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).clientid } Catch { $null }
     $id = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).id } Catch { $null }
     $version = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).version } Catch { $null }
     $server = Try { ((Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop)."Server Address") } Catch { $null }
-    $janus_res = Test-JanusLoaded
+    if ($ltsvc_path_exists -and $lterrors_exists) {
+        $janus_res = Test-JanusLoaded
+        $signup_failure = Test-FailedSignup
+    }
 
     if ($ltposh_loaded) {
         # Get ltservice info

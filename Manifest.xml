@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ExtensionManifest>
-	<Version>1.0.5.7</Version>
+	<Version>1.0.6.0</Version>
 	<Name>Automate Diagnostics</Name>
 	<Author>John Duprey - Complete Network</Author>
 	<ShortDescription>Diagnoses Automate Agents from CW Control. Change the LTPoSh URL in the settings.</ShortDescription>
@@ -27,6 +27,10 @@
 			<Description>The hostname for your automate server (exclude https://).</Description>
 			<DefaultValue></DefaultValue>
 		</Setting>
+		<Setting Name="InstallerToken" IsServerOnly="false">
+			<Description>Generate a long lived InstallerToken - https://www.mspgeek.com/files/file/50-generate-agent-installertoken/</Description>
+			<DefaultValue></DefaultValue>
+		</Setting>
 		<Setting Name="MaintenanceMode" IsServerOnly="false">
 			<Description>1 = Enable, 0 = Disable</Description>
 			<DefaultValue>0</DefaultValue>
@@ -34,6 +38,14 @@
 		<Setting Name="SetUseMachineName" IsServerOnly="false">
 			<Description>Fix access session to use machine name - 1 = Enable, 0 = Disable</Description>
 			<DefaultValue>0</DefaultValue>
+		</Setting>
+		<Setting Name="AgentIDCustomProperty" IsServerOnly="false">
+			<Description>Change this if you are currently using CustomProperty6</Description>
+			<DefaultValue>6</DefaultValue>
+		</Setting>
+		<Setting Name="AgentVersionCustomProperty" IsServerOnly="false">
+			<Description>Change this if you are currently using CustomProperty7</Description>
+			<DefaultValue>7</DefaultValue>
 		</Setting>
 		<Setting Name="Timeout" IsServerOnly="false">
 			<Description>Diagnostic timeout - Default is 10 minutes (600000ms)</Description>

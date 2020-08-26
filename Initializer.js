@@ -16,6 +16,9 @@ function getLinuxDiagnosticsURL() {
 function getLTServer() {
 	return extensionContext.settingValues.AutomateHostname;
 }
+function getInstallerToken() {
+	return extensionContext.settingValues.InstallerToken;
+}
 function getTimeout() {
 	return extensionContext.settingValues.Timeout;
 }
@@ -378,7 +381,7 @@ function getAutomateCommandText(headers) {
 		case "ps/powershell/json/ReinstallAutomate":
 			var txtlocationid = $('#locationidreinstall').value;
 			if (isNaN(txtlocationid)) { txtlocationid = "1"; }
-			return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12};(new-object Net.WebClient).DownloadString('"+getLTPoSh()+"') | iex; Reinstall-LTService -SkipDotNet -Server https://"+getLTServer()+" -LocationID "+txtlocationid;
+			return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12};(new-object Net.WebClient).DownloadString('"+getLTPoSh()+"') | iex; Reinstall-LTService -SkipDotNet -Server https://"+getLTServer()+" -LocationID "+txtlocationid + " -InstallerToken " + getInstallerToken();
 			return 
 		case "sh/bash/json/Automate": return "url="+getLinuxDiagnosticsURL()+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi"; 
     	default: throw "unknown os";

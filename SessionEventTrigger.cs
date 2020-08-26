@@ -15,6 +15,8 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 	{
 		var maintenance = ExtensionContext.Current.GetSettingValue("MaintenanceMode");
 		var usemachinename = ExtensionContext.Current.GetSettingValue("SetUseMachineName");
+		var agentidproperty = ExtensionContext.Current.GetSettingValue("AgentIDCustomProperty");
+		var agentversionproperty = ExtensionContext.Current.GetSettingValue("AgentVersionCustomProperty");
 		
 		if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected && 
 			sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest && maintenance == "0" && sessionEventTriggerEvent.Session.ActiveConnections.Where(_ => _.ProcessType == ProcessType.Host).Count() == 0) {
@@ -32,10 +34,10 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 							DiagOutput diag = Deserialize(data[1]);
 							var session = sessionEventTriggerEvent.Session;
 							if (diag.version != null) {
-								session.CustomPropertyValues[6] = diag.version;
+								session.CustomPropertyValues[agentversionproperty - 1] = diag.version;
 							}
 							if (diag.id != null) {
-								session.CustomPropertyValues[5] = diag.id;
+								session.CustomPropertyValues[agentidproperty - 1] = diag.id;
 							}
 							var sessionname = session.Name;
 							if (usemachinename == "1") {
