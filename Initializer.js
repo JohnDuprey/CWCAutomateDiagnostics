@@ -19,6 +19,9 @@ function getLTServer() {
 function getInstallerToken() {
 	return extensionContext.settingValues.InstallerToken;
 }
+function getAgentVersionProp() {
+	return extensionContext.settingValues.AgentVersionCustomProperty;
+}
 function getTimeout() {
 	return extensionContext.settingValues.Timeout;
 }
@@ -106,12 +109,10 @@ SC.event.addGlobalHandler(SC.event.ExecuteCommand, function (eventArgs) {
 });
 
 SC.event.addGlobalHandler(SC.event.PreRender, function (eventArgs) {
-	if (!extensionContext.settingValues.createdVersionSessionGroup) {
+	if (extensionContext.settingValues.createdVersionSessionGroup) {
+		var versionProperty = getAgentVersionProp();
 		SC.service.NotifyCreatedVersionSessionGroup();
-		SC.service.SetVersionCustomProperties(function () {
-			SC.pagedata.notifyDirty();
-		});
-
+		SC.service.SetVersionCustomProperties();
 		SC.service.GetSessionGroups(function (sessionGroups) {
 			for (var sessionTypesAsString = ['Sessions', 'Meetings', 'Machines'], sessionType = 0 ; sessionType < sessionTypesAsString.length; sessionType++) {
 				var name = "All " + sessionTypesAsString[sessionType] + " by CWA Version";
@@ -119,9 +120,9 @@ SC.event.addGlobalHandler(SC.event.PreRender, function (eventArgs) {
 				if (!sessionGroups.find(function (session) { return session.Name === name })) {
 					sessionGroups.push({
 						Name: name,
-						SessionFilter: "NOT CustomProperty7 = ''",
+						SessionFilter: "NOT CustomProperty"+versionProperty+" = ''",
 						SessionType: sessionType,
-						SubgroupExpressions: 'CustomProperty7'
+						SubgroupExpressions: 'CustomProperty'+verionProperty
 					});
 				}
 			}

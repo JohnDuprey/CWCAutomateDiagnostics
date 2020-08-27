@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ExtensionManifest>
-	<Version>1.0.6.1</Version>
+	<Version>1.0.6.3</Version>
 	<Name>Automate Diagnostics</Name>
 	<Author>John Duprey - Complete Network</Author>
 	<ShortDescription>Diagnoses Automate Agents from CW Control. Change the LTPoSh URL in the settings.</ShortDescription>
@@ -56,8 +56,8 @@
 			<DefaultValue>0</DefaultValue>
 		</Setting>
 		<Setting Name="createdVersionSessionGroup" IsServerOnly="false" >
-			<Description>Default: Re-create session group and rename custom properties</Description>
-			<DefaultValue></DefaultValue>
+			<Description>Set to 1 to create session group and rename custom properties. Delete the session group to re-create.</Description>
+			<DefaultValue>0</DefaultValue>
 		</Setting>
 	</Settings>
 </ExtensionManifest>
