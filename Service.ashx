@@ -12,7 +12,7 @@ public class Service : WebServiceBase
 	{
 		var runtime = ExtensionRuntime.TryGetExtensionRuntime(ExtensionContext.Current.ExtensionID);
 		var settings = runtime.GetSettingValues(true);
-		settings["createdVersionSessionGroup"] = "0";
+		settings["CreateVersionSessionGroup"] = "0";
 		ExtensionRuntime.SaveExtensionSettingValues(ExtensionContext.Current.ExtensionID, settings);
 	}
 

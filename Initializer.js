@@ -109,7 +109,7 @@ SC.event.addGlobalHandler(SC.event.ExecuteCommand, function (eventArgs) {
 });
 
 SC.event.addGlobalHandler(SC.event.PreRender, function (eventArgs) {
-	if (extensionContext.settingValues.createdVersionSessionGroup) {
+	if (extensionContext.settingValues.CreateVersionSessionGroup) {
 		var versionProperty = getAgentVersionProp();
 		SC.service.NotifyCreatedVersionSessionGroup();
 		SC.service.SetVersionCustomProperties();

@@ -55,7 +55,7 @@
 			<Description>1 = Enable, 0 = Disable</Description>
 			<DefaultValue>0</DefaultValue>
 		</Setting>
-		<Setting Name="createdVersionSessionGroup" IsServerOnly="false" >
+		<Setting Name="CreateVersionSessionGroup" IsServerOnly="false" >
 			<Description>Set to 1 to create session group and rename custom properties. Delete the session group to re-create.</Description>
 			<DefaultValue>0</DefaultValue>
 		</Setting>
