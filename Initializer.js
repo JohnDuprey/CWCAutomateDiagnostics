@@ -109,7 +109,7 @@ SC.event.addGlobalHandler(SC.event.ExecuteCommand, function (eventArgs) {
 });
 
 SC.event.addGlobalHandler(SC.event.PreRender, function (eventArgs) {
-	if (extensionContext.settingValues.CreateVersionSessionGroup) {
+	if (!typeof extensionContext === 'undefined' && extensionContext.settingValues.CreateVersionSessionGroup) {
 		var versionProperty = getAgentVersionProp();
 		SC.service.NotifyCreatedVersionSessionGroup();
 		SC.service.SetVersionCustomProperties();
@@ -122,7 +122,7 @@ SC.event.addGlobalHandler(SC.event.PreRender, function (eventArgs) {
 						Name: name,
 						SessionFilter: "NOT CustomProperty"+versionProperty+" = ''",
 						SessionType: sessionType,
-						SubgroupExpressions: 'CustomProperty'+verionProperty
+						SubgroupExpressions: 'CustomProperty'+versionProperty
 					});
 				}
 			}
