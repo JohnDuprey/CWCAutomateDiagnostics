@@ -109,26 +109,28 @@ SC.event.addGlobalHandler(SC.event.ExecuteCommand, function (eventArgs) {
 });
 
 SC.event.addGlobalHandler(SC.event.PreRender, function (eventArgs) {
-	if (!typeof extensionContext === 'undefined' && extensionContext.settingValues.CreateVersionSessionGroup) {
-		var versionProperty = getAgentVersionProp();
-		SC.service.NotifyCreatedVersionSessionGroup();
-		SC.service.SetVersionCustomProperties();
-		SC.service.GetSessionGroups(function (sessionGroups) {
-			for (var sessionTypesAsString = ['Sessions', 'Meetings', 'Machines'], sessionType = 0 ; sessionType < sessionTypesAsString.length; sessionType++) {
-				var name = "All " + sessionTypesAsString[sessionType] + " by CWA Version";
+	if (typeof extensionContext !== 'undefined') {
+		if (extensionContext.settingValues.CreateVersionSessionGroup == 1) {
+			var versionProperty = getAgentVersionProp();
+			SC.service.NotifyCreatedVersionSessionGroup();
+			SC.service.SetVersionCustomProperties();
+			SC.service.GetSessionGroups(function (sessionGroups) {
+				for (var sessionTypesAsString = ['Sessions', 'Meetings', 'Machines'], sessionType = 0 ; sessionType < sessionTypesAsString.length; sessionType++) {
+					var name = "All " + sessionTypesAsString[sessionType] + " by CWA Version";
 
-				if (!sessionGroups.find(function (session) { return session.Name === name })) {
-					sessionGroups.push({
-						Name: name,
-						SessionFilter: "NOT CustomProperty"+versionProperty+" = ''",
-						SessionType: sessionType,
-						SubgroupExpressions: 'CustomProperty'+versionProperty
-					});
+					if (!sessionGroups.find(function (session) { return session.Name === name })) {
+						sessionGroups.push({
+							Name: name,
+							SessionFilter: "NOT CustomProperty"+versionProperty+" = ''",
+							SessionType: sessionType,
+							SubgroupExpressions: 'CustomProperty'+versionProperty
+						});
+					}
 				}
-			}
 
-			SC.service.SaveSessionGroups(sessionGroups);
-		});
+				SC.service.SaveSessionGroups(sessionGroups);
+			});
+		}
 	}
 });
 

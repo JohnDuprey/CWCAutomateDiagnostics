@@ -3,7 +3,7 @@
 	<Version>1.0.6.4</Version>
 	<Name>Automate Diagnostics</Name>
 	<Author>John Duprey - Complete Network</Author>
-	<ShortDescription>Diagnoses Automate Agents from CW Control. Change the LTPoSh URL in the settings.</ShortDescription>
+	<ShortDescription>Diagnoses Automate Agents from CW Control. Visit https://github.com/johnduprey/CWCAutomateDiagnostics for the Readme.</ShortDescription>
 	<Components>
 		<ClientScriptInitializer SourceFile="Initializer.js" MinProductVersionInclusive="6.3"/>
 		<DynamicSessionEventTriggerDefinition SourceFile="SessionEventTrigger.cs" MinProductVersionInclusive="6.3" />
