@@ -250,13 +250,23 @@ Function Test-JanusLoaded {
 
 Function Test-FailedSignup {
     try { 
-        $signup = get-content $env:windir\ltsvc\lterrors.txt | select-string "Failed signup" | Select-Object -Last 1 
+        $signup = get-content $env:windir\ltsvc\lterrors.txt | select-string "Agent Signup Failed" | Select-Object -Last 1 
         if ($signup -match "Agent Signup Failed") { $true }
         else {
             $false
         }
     }
     catch { $false }
+}
+Function Test-CryptoFailed {
+        try { 
+        $signup = get-content $env:windir\ltsvc\lterrors.txt | select-string "Unable to initialize remote agent security." | Select-Object -Last 1 
+        if ($signup -match "Unable to initialize remote agent security.") { $true }
+        else {
+            $false
+        }
+    }
+    catch { $false } 
 }
 
 Function Invoke-CheckIn {
@@ -280,6 +290,7 @@ Function Start-AutomateDiagnostics {
     }
 
     $signup_failure = $false
+    $agent_crypto_failure = $false
     $janus_res = $false
     # Initial checkin
     Invoke-CheckIn
@@ -320,6 +331,8 @@ Function Start-AutomateDiagnostics {
     # Check LTSVC path and lterrors.txt
     $ltsvc_path_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc")
     $lterrors_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc\lterrors.txt")
+    $lterrors = if ($lterrors_exists) { Get-Content (Join-Path $env:windir "\ltsvc\lterrors.txt") } else {""}
+    $lterrors_enc = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($lterrors))
 
     # Get reg keys in case LTPosh fails
     $locationid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).locationid } Catch { $null }
@@ -330,6 +343,7 @@ Function Start-AutomateDiagnostics {
     if ($ltsvc_path_exists -and $lterrors_exists) {
         $janus_res = Test-JanusLoaded
         $signup_failure = Test-FailedSignup
+        $agent_crypto_failure = Test-CryptoFailed
     }
 
     if ($ltposh_loaded) {
@@ -492,6 +506,9 @@ Function Start-AutomateDiagnostics {
                 'locationid' = $info.LocationID
                 'ltsvc_path_exists' = $ltsvc_path_exists
                 'janus_status' = $janus_res
+                'signup_failure' = $signup_failure
+                'agent_crypto_failure' = $agent_crypto_failure
+                'lterrors' = $lterrors_enc
             }
         }
         Catch { # LTPosh loaded, issue with agent
@@ -511,6 +528,9 @@ Function Start-AutomateDiagnostics {
                 'clientid' = $clientid
                 'repair' = $repair
                 'janus_status' = $janus_res
+                'signup_failure' = $signup_failure
+                'agent_crypto_failure' = $agent_crypto_failure
+                'lterrors' = $lterrors_enc
             }
         }
     }
@@ -526,6 +546,9 @@ Function Start-AutomateDiagnostics {
             'ltposh_loaded' = $ltposh_loaded
             'version' = $version
             'janus_status' = $janus_res
+            'signup_failure' = $signup_failure
+            'agent_crypto_failure' = $agent_crypto_failure
+            'lterrors' = $lterrors_enc
         }
     }
 	Write-Output "!---BEGIN JSON---!"

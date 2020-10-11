@@ -215,7 +215,7 @@ function isMyTab(tabName) {
 }
 
 function isDiagnosticContent(eventData) {
-	return (eventData.startsWith("DIAGNOSTIC-RESPONSE/1") || eventData.startsWith("\ufeffDIAGNOSTIC-RESPONSE/1") ? true : false);
+	return ((eventData.startsWith("DIAGNOSTIC-RESPONSE/1") || eventData.startsWith("\ufeffDIAGNOSTIC-RESPONSE/1") && eventData.match("/!---BEGIN JSON---!/g")) ? true : false);
 }
 
 function getLatestDiagnosticEvent(sessionDetails, diagnosticEventType) {
