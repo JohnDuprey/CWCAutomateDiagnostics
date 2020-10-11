@@ -282,7 +282,8 @@ Function Start-AutomateDiagnostics {
 	Param(
         $ltposh = "http://bit.ly/LTPoSh",
         $automate_server = "",
-        [switch]$verbose = $false
+        [switch]$verbose = $false,
+        [switch]$include_lterrors = $false
     )
 
     if ($verbose) {
@@ -331,8 +332,12 @@ Function Start-AutomateDiagnostics {
     # Check LTSVC path and lterrors.txt
     $ltsvc_path_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc")
     $lterrors_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc\lterrors.txt")
-    $lterrors = if ($lterrors_exists) { Get-Content (Join-Path $env:windir "\ltsvc\lterrors.txt") } else {""}
-    $lterrors_enc = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($lterrors))
+    
+    if ($include_lterrors) {
+        $lterrors = if ($lterrors_exists) { Get-Content (Join-Path $env:windir "\ltsvc\lterrors.txt") } else {""}
+        $lterrors_enc = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($lterrors))
+    }
+    else { $lterrors_enc = "" }
 
     # Get reg keys in case LTPosh fails
     $locationid = Try { (Get-ItemProperty -Path hklm:\software\labtech\service -ErrorAction Stop).locationid } Catch { $null }
