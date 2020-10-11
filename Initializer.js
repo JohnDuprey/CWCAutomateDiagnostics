@@ -187,7 +187,7 @@ function getAutomateInputCommand(diagnosticType, operatingSystem) {
 	}
 	
 	return  "#!" + headers.shaBang + "\n" +
-		"#maxlength=100000" + "\n" +
+		"#maxlength=10000000" + "\n" +
 		"#timeout=" + timeout + "\n" +
 		headers.modifier + "DIAGNOSTIC-RESPONSE/1" + headers.delimiter  + "\n" +
 		headers.modifier + "DiagnosticType: " + headers.DiagnosticType + headers.delimiter  + "\n" +
