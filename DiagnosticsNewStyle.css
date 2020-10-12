@@ -55,15 +55,13 @@
 	width:95%;
 }
 
-#repairOptions {
+#repairOptions, #dataContainer {
 	display: inline-block;
 	text-align: left;
 	width: 95%;
 }
 
-#lterrors, #dataContainer {
-	display: inline-block;
-	text-align: left;
+#lterrors {
 	height: 100%;
 	width: 95%;
 	height: 100%;

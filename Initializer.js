@@ -273,6 +273,7 @@ function parseJson(eventData) {
 function displayDataJson(json) {
 
 	SC.ui.addElement($('dataContainer'), 'h3', {id: "tableDetails", innerHTML: "Details"});
+	
 	if ("ltposh_loaded" in json) {
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltposh_row'});
 		SC.ui.addElement($('ltposh_row'), 'th', {id: 'ltposh_hdr', innerHTML: 'LTPosh Loaded'});
