@@ -62,6 +62,8 @@
 }
 
 #lterrors {
+	display: inline-block;
+	text-align: left;
 	height: 100%;
 	width: 95%;
 	height: 100%;
