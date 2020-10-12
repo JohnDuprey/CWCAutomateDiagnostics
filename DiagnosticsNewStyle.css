@@ -54,3 +54,21 @@
 	top:10%;
 	width:95%;
 }
+
+#repairOptions {
+	display: inline-block;
+	text-align: left;
+	width: 95%;
+}
+
+#lterrors {
+	display: inline-block;
+	text-align: left;
+	height: 100%;
+	width: 95%;
+	height: 100%;
+}
+
+#lterrors_file{
+	white-space: pre-wrap;
+}

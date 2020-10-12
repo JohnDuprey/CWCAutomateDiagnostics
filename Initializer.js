@@ -57,6 +57,8 @@ SC.event.addGlobalHandler(SC.event.InitializeTab, function (eventArgs) {
 		SC.ui.addElement(eventArgs.container, 'DIV', {id: 'lastUpdateContainer'});
 		SC.ui.addElement(eventArgs.container, 'DIV', {id: 'dataContainer'});
 		SC.ui.addElement(eventArgs.container, 'TABLE', {id: 'dataTable'});
+		SC.ui.addElement(eventArgs.container, 'DIV', {id: 'repairOptions'});
+		SC.ui.addElement(eventArgs.container, 'DIV', {id: 'lterrors'});
 	}
 });
 
@@ -336,13 +338,19 @@ function displayDataJson(json) {
 	SC.ui.addElement($('dataTable'), 'tr', {id: 'locationid_row'});
 	SC.ui.addElement($('locationid_row'), 'th', {id: 'locationid_hdr', innerHTML: 'Location ID'});
 	SC.ui.addElement($('locationid_row'), 'td', {id: 'locationid', innerHTML:json["locationid"], colspan: 2});
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'repair_row1'});
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'repair_row2'});
-	SC.ui.addElement($('repair_row1'), 'th', {id: 'repair_hdr', innerHTML: 'Repair Option'});
-	SC.ui.addElement($('repair_row2'), 'th', {id: 'repair_hdr', innerHTML: 'Repair Option'});
-	var repairCol1 = SC.ui.addElement($('repair_row1'), 'td', {id: 'repair', innerHTML:"", colspan: 2});
-	var repairCol2 = SC.ui.addElement($('repair_row2'), 'td', {id: 'repair', innerHTML:"", colspan: 2});
+	//SC.ui.addElement($('dataTable'), 'tr', {id: 'repair_row1'});
+	//SC.ui.addElement($('dataTable'), 'tr', {id: 'repair_row2'});
+	SC.ui.addElement($('repairOptions'),'h3',{id: 'repair_hdr', innerHTML: "Repair Options"});
+	var repairCol1 = SC.ui.addElement($('repairOptions'), 'div', {id: 'restartOption'});
+	var repairCol2 = SC.ui.addElement($('repairOptions'), 'div', {id: 'reinstallOption'});
+	//var repairCol1 = SC.ui.addElement($('restartOption'), 'td', {id: 'repair', innerHTML:"", colspan: 2});
+	//var repairCol2 = SC.ui.addElement($('reinstallOPtion'), 'td', {id: 'repair', innerHTML:"", colspan: 2});
 	//var repairButton = {commandName: json["repair"], commandArgument: 'Automate', text: json["repair"]};
+
+	if (json['lterrors'] != "") {
+		SC.ui.addElement($('lterrors'),'h3',{id: 'lterrors_hdr', innerHTML: "LTErrors.txt"});
+		SC.ui.addElement($('lterrors'),'pre',{id: 'lterrors_file', innerHTML: atob(json['lterrors'])});
+	}
 
 	SC.command.queryAndAddCommandButtons(repairCol1, 'RestartButton');
 	SC.command.queryAndAddCommandButtons(repairCol2, 'ReinstallButton');
@@ -393,7 +401,7 @@ function getAutomateCommandText(headers) {
 			if (isNaN(txtlocationid)) { txtlocationid = "1"; }
 			return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12};(new-object Net.WebClient).DownloadString('"+getLTPoSh()+"') | iex; Reinstall-LTService -SkipDotNet -Server https://"+getLTServer()+" -LocationID "+txtlocationid + " -InstallerToken " + txtinstallertoken;
 			return 
-		case "sh/bash/json/Automate": return "url="+getLinuxDiagnosticsURL()+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi"; 
+		case "sh/bash/json/Automate": return "url="+getLinuxDiagnosticsURL()+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python - -e); fi"; 
     	default: throw "unknown os";
 	}
 }
