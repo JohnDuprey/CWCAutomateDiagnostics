@@ -67,6 +67,8 @@ SC.event.addGlobalHandler(SC.event.RefreshTab, function (eventArgs) {
 		SC.ui.clear($('dataContainer'));
 		SC.ui.clear($('lastUpdateContainer'));
 		SC.ui.clear($('dataTable'));
+		SC.ui.clear($('repairOptions'));
+		SC.ui.clear($('lterrors'));
 		
 		SC.ui.findDescendent(
 			eventArgs.container, function(e) { 
@@ -401,7 +403,7 @@ function getAutomateCommandText(headers) {
 			if (isNaN(txtlocationid)) { txtlocationid = "1"; }
 			return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12};(new-object Net.WebClient).DownloadString('"+getLTPoSh()+"') | iex; Reinstall-LTService -SkipDotNet -Server https://"+getLTServer()+" -LocationID "+txtlocationid + " -InstallerToken " + txtinstallertoken;
 			return 
-		case "sh/bash/json/Automate": return "url="+getLinuxDiagnosticsURL()+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python - -e); fi"; 
+		case "sh/bash/json/Automate": return "url="+getLinuxDiagnosticsURL()+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | python - -e); else echo $($WGET -q -O - --no-check-certificate $url | python - -e); fi"; 
     	default: throw "unknown os";
 	}
 }
