@@ -5,6 +5,7 @@ import platform
 import base64
 import getopt
 import sys
+import cgi
 
 def system_call(command):
 	p = subprocess.Popen([command], stdout=subprocess.PIPE, shell=True)
@@ -20,7 +21,7 @@ try:
 	for opt, arg in opts:
 		if opt == '-e':
 			with open("/usr/local/ltechagent/agent.log","r") as log_file:
-				lterrors = log_file.read()
+				lterrors = cgi.escape(log_file.read())
 except getopt.GetoptError:
 	pass
 
@@ -80,6 +81,7 @@ diag_result = {
 	'update': update,
 	'version': data["version"],
 	'id': data['computer_id'],
+	'clientid': data['client_id'],
 	'online': data["is_signed_in"],
 	'svc_ltservice': svc_ltsvc,
 	'lterrors': lterrors_str

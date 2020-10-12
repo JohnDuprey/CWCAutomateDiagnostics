@@ -61,7 +61,7 @@
 	width: 95%;
 }
 
-#lterrors {
+#lterrors, #dataContainer {
 	display: inline-block;
 	text-align: left;
 	height: 100%;

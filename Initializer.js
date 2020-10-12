@@ -29,7 +29,6 @@ function getVerbose() {
 	if (extensionContext.settingValues.Verbose == "1") { return "-Verbose"; } else { return ""; }
 }
 
-
 SC.event.addGlobalHandler(SC.event.QueryCommandButtons, function (eventArgs) {
 	switch (eventArgs.area) {
 		case 'HostDetailTabList':
@@ -272,11 +271,14 @@ function parseJson(eventData) {
 }
 
 function displayDataJson(json) {
+
+	SC.ui.addElement($('dataContainer'), 'h3', {id: "tableDetails", innerHTML: "Details"});
 	if ("ltposh_loaded" in json) {
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'ltposh_row'});
 		SC.ui.addElement($('ltposh_row'), 'th', {id: 'ltposh_hdr', innerHTML: 'LTPosh Loaded'});
 		SC.ui.addElement($('ltposh_row'), 'td', {id: 'ltposh', innerHTML: (json["ltposh_loaded"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>"});
 	}
+
 	if ("server_addr" in json) {
 		if (!/Error/i.test(json["server_addr"]) && json["server_addr"] != null) { var server_status = "<span class='success'>✓</span>"; } else { var server_status = "<span class='failed'>✗</span>"; }
 		if (json["server_addr"] != null) {
@@ -287,32 +289,35 @@ function displayDataJson(json) {
 		SC.ui.addElement($('server_row'), 'th', {id: 'server_hdr', innerHTML: 'Server Check'});
 		SC.ui.addElement($('server_row'), 'td', {id: 'server', innerHTML: server_status + " " + server, colspan: 2});
 	}
+
 	if ("id" in json) {
-		if (json["id"] != null) {
-			if (json["id"] > 0) { var agentid_status = "<span class='success'>✓</span>"; } else { var agentid_status = "<span class='failed'>✗</span>"; }
-			SC.ui.addElement($('dataTable'), 'tr', {id: 'agent_id_row'});
-			SC.ui.addElement($('agent_id_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Agent ID'});
-			SC.ui.addElement($('agent_id_row'), 'td', {id: 'agent_id', innerHTML: agentid_status + " " + json["id"]});
-		}
+		if (json["id"] > 0) { var agentid_status = "<span class='success'>✓</span>"; } else { var agentid_status = "<span class='failed'>✗</span>"; }
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'agent_id_row'});
+		SC.ui.addElement($('agent_id_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Agent ID'});
+		SC.ui.addElement($('agent_id_row'), 'td', {id: 'agent_id', innerHTML: agentid_status + " " + json["id"]});
 	}
+
 	if ("update" in json) {
 		if (!/Error/i.test(json["update"])) { var update_status = "<span class='success'>✓</span>"; } else { var update_status = "<span class='failed'>✗</span>"; }
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'update_row'});
 		SC.ui.addElement($('update_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'Update Check'});
 		SC.ui.addElement($('update_row'), 'td', {id: 'agent_id', innerHTML: update_status + " " + json["update"], colspan: 2});
 	}
+
 	if ("online" in json) {
 		var online_status = (json["online"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>";
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'status_row'});
 		SC.ui.addElement($('status_row'), 'th', {id: 'status_hdr', innerHTML: 'Checkin Health'});
 		SC.ui.addElement($('status_row'), 'td', {id: 'status', innerHTML: online_status + " " + json['lastcontact']});
 	}
+
 	if ("heartbeat" in json) {
 		var heartbeat_status = (json["heartbeat"]) ? "<span class='success'>✓</span>":"<span class='failed'>✗</span>";
 		SC.ui.addElement($('dataTable'), 'tr', {id: 'status_row2'});
 		SC.ui.addElement($('status_row2'), 'th', {id: 'status_hdr2', innerHTML: 'Heartbeat Health'});
 		SC.ui.addElement($('status_row2'), 'td', {id: 'status2', innerHTML: heartbeat_status + " " + json["heartbeat_sent"]});
 	}
+
 	if ("svc_ltservice" in json) {
 		if (json["svc_ltservice"]["Status"] != "Not Detected") {
 			var ltservice_txt = json["svc_ltservice"]["Status"] + " | " + json["svc_ltservice"]["Start Mode"] + " | " + json["svc_ltservice"]["User"];
@@ -325,6 +330,7 @@ function displayDataJson(json) {
 		SC.ui.addElement($('ltsvc_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'SVC - LTService'});
 		SC.ui.addElement($('ltsvc_row'), 'td', {id: 'ltsvc', innerHTML: ltservice_status + " " + ltservice_txt});
 	}
+
 	if ("svc_ltsvcmon" in json) {
 		if (json["svc_ltsvcmon"]["Status"] != "Not Detected") {
 			var ltsvcmon_txt =  json["svc_ltsvcmon"]["Status"] + " | " + json["svc_ltsvcmon"]["Start Mode"] + " | " + json["svc_ltsvcmon"]["User"];
@@ -337,25 +343,29 @@ function displayDataJson(json) {
 		SC.ui.addElement($('ltsvcmon_row'), 'th', {id: 'agent_id_hdr', innerHTML: 'SVC - LTSVCMon'});
 		SC.ui.addElement($('ltsvcmon_row'), 'td', {id: 'ltsvc', innerHTML: ltsvcmon_status + " " + ltsvcmon_txt});
 	}
-	SC.ui.addElement($('dataTable'), 'tr', {id: 'locationid_row'});
-	SC.ui.addElement($('locationid_row'), 'th', {id: 'locationid_hdr', innerHTML: 'Location ID'});
-	SC.ui.addElement($('locationid_row'), 'td', {id: 'locationid', innerHTML:json["locationid"], colspan: 2});
-	//SC.ui.addElement($('dataTable'), 'tr', {id: 'repair_row1'});
-	//SC.ui.addElement($('dataTable'), 'tr', {id: 'repair_row2'});
+
+	if ("locationid" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'locationid_row'});
+		SC.ui.addElement($('locationid_row'), 'th', {id: 'locationid_hdr', innerHTML: 'Location ID'});
+		SC.ui.addElement($('locationid_row'), 'td', {id: 'locationid', innerHTML:json["locationid"], colspan: 2});
+	}
+
+	if ("repair" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', {id: 'repair_row'});
+		SC.ui.addElement($('repair_row'), 'th', {id: 'repair_hdr', innerHTML: 'Recommended Repair'});
+		SC.ui.addElement($('repair_row'), 'td', {id: 'repair_val', innerHTML:json["repair"], colspan: 2});
+	}
+
 	SC.ui.addElement($('repairOptions'),'h3',{id: 'repair_hdr', innerHTML: "Repair Options"});
 	var repairCol1 = SC.ui.addElement($('repairOptions'), 'div', {id: 'restartOption'});
 	var repairCol2 = SC.ui.addElement($('repairOptions'), 'div', {id: 'reinstallOption'});
-	//var repairCol1 = SC.ui.addElement($('restartOption'), 'td', {id: 'repair', innerHTML:"", colspan: 2});
-	//var repairCol2 = SC.ui.addElement($('reinstallOPtion'), 'td', {id: 'repair', innerHTML:"", colspan: 2});
-	//var repairButton = {commandName: json["repair"], commandArgument: 'Automate', text: json["repair"]};
-
-	if (json['lterrors'] != "") {
-		SC.ui.addElement($('lterrors'),'h3',{id: 'lterrors_hdr', innerHTML: "LTErrors.txt"});
-		SC.ui.addElement($('lterrors'),'pre',{id: 'lterrors_file', innerHTML: atob(json['lterrors'])});
-	}
-
 	SC.command.queryAndAddCommandButtons(repairCol1, 'RestartButton');
 	SC.command.queryAndAddCommandButtons(repairCol2, 'ReinstallButton');
+
+	if ("lterrors" in json && json['lterrors'] != "") {
+		SC.ui.addElement($('lterrors'),'h3',{id: 'lterrors_hdr', innerHTML: "Agent Log"});
+		SC.ui.addElement($('lterrors'),'pre',{id: 'lterrors_file', innerHTML: atob(json['lterrors'])});
+	}
 }
 
 function isUsingInternetExplorerOrEdge() {

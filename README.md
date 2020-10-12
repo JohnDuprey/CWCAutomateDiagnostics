@@ -4,7 +4,9 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 <img src="https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/Promote.png" width="200" />
 
 ## Features
-- NEW - Maintenance Mode - Disable diagnostics on GuestConnect event
+- NEW - LTErrors.txt / agent.log file is returned in the diagnostic
+- NEW - /usr/local/ltechagent/ltupdate initiated from AutomateDiagnostics.py
+- Maintenance Mode - Disable diagnostics on GuestConnect event
 - Mac OS X/Linux Agent Reporting
 - Forces agent updates using Update-LTService
 - Verifies LTService and LTSVCmon services are running and set to Automatic. Will start services and set StartMode to Automatic.
@@ -15,7 +17,7 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 - Repair option now uses InstallerToken, generate a long lived one using this script https://www.mspgeek.com/files/file/50-generate-agent-installertoken/.
 
 ## Installation
-- Install Automate Diagnostics from the ConnectWise Control Marketplace (v1.0.5.7 *latest version is not available yet)
+- Install Automate Diagnostics from the ConnectWise Control Marketplace (version 1.0.6.4)
 
 ### Manual Instructions
 1. Create a new directory for the extension - %programfiles(x86)%\ScreenConnect\App_Extensions\e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76
@@ -24,7 +26,7 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 
 ## Setup
 1. In the settings, modify the PathToLTPoSh to a URL that you trust or one that is configured to bypass content filters
-2. Additionally, find the Guid for the Control extension (manual one is listed above, cloud should be 26a42e0d-6233-4a66-9575-6e05a248cd26 once it's added to the marketplace)
+2. Additionally, find the Guid for the Control extension (manual one is listed above, cloud is 26a42e0d-6233-4a66-9575-6e05a248cd26)
 3. Build the URL with the extension Guid and add that to the settings to avoid calling the script from GitHub. (e.g https://control_url:port/App_Extensions/<extension_guid>/AutomateDiagnostics.ps1)
 
 ## Usage
