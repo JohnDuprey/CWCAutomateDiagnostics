@@ -537,7 +537,7 @@ Function Start-AutomateDiagnostics {
                 else {
                     $compare_test = if (($hostname -eq $automate_server -and $automate_server -ne "") -or $automate_server -eq "") { $true } else { $false }
                     if (Test-CommandExists -Command "Test-NetConnection") {
-                        Try { $conn_test = Test-NetConnection -ComputerName $hostname -Port 443 } Catch {
+                        Try { $conn_test = Test-NetConnection -ComputerName $hostname -Port 443 -ErrorAction Stop } Catch {
                             $timeout = 1000
                             $netping = New-Object System.Net.NetworkInformation.Ping
                             $ping = $netping.Send($hostname,$timeout)
@@ -552,7 +552,7 @@ Function Start-AutomateDiagnostics {
                         }
                     }
                     else {
-                        Try { $conn_test = Test-Connection -ComputerName $hostname -Count 1 } Catch { 
+                        Try { $conn_test = Test-Connection -ComputerName $hostname -Count 1 -ErrorAction Stop } Catch { 
                             $timeout = 1000
                             $netping = New-Object System.Net.NetworkInformation.Ping
                             $ping = $netping.Send($hostname,$timeout)
@@ -702,6 +702,6 @@ Function Start-AutomateDiagnostics {
 		$diag | ConvertTo-Json -depth 2
 	}
 	else {
-		$diag | ConvertTo-STJson
+		$diag | ConvertTo-STJson | Write-Host # Added Write-Host to prevent wrapping on json
 	}
 }
