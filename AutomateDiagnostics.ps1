@@ -452,7 +452,7 @@ Function Start-AutomateDiagnostics {
     $lterrors_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc\lterrors.txt")
     
     if ($include_lterrors) {
-        $lterrors = if ($lterrors_exists) { Get-Content (Join-Path $env:windir "\ltsvc\lterrors.txt") } else {""}
+        $lterrors = if ($lterrors_exists) { Get-Content -Raw -Path (Join-Path $env:windir "\ltsvc\lterrors.txt") } else {""}
         $lterrors_enc = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($lterrors))
     }
     else { $lterrors_enc = "" }
