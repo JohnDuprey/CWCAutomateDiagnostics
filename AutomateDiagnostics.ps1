@@ -282,8 +282,9 @@ Function Start-AutomateDiagnostics {
 	Param(
         $ltposh = "http://bit.ly/LTPoSh",
         $automate_server = "",
-        [switch]$verbose = $false,
-        [switch]$include_lterrors = $false
+        [switch]$verbose,
+        [switch]$include_lterrors,
+        [switch]$skip_updates
     )
 
     if ($verbose) {
@@ -391,7 +392,7 @@ Function Start-AutomateDiagnostics {
                 Write-Verbose "Issuing Restart-LTService and sending checkin"
                 Restart-LTService
                 Invoke-CheckIn
-                Start-Sleep -Seconds 15
+                Start-Sleep -Seconds 10
                 $info = Get-LTServiceInfo
                 $ltservice_check = serviceCheck('LTService')
                 $ltsvcmon_check = serviceCheck('LTSVCMon')
@@ -419,15 +420,33 @@ Function Start-AutomateDiagnostics {
                 else {
                     $compare_test = if (($hostname -eq $automate_server -and $automate_server -ne "") -or $automate_server -eq "") { $true } else { $false }
                     if (Test-CommandExists -Command "Test-NetConnection") {
-                        Try { $conn_test = Test-NetConnection -ComputerName $hostname -Port 443 } Catch { 
-                            Write-Verbose "Port test failed"
-                            $conn_test = $false 
+                        Try { $conn_test = Test-NetConnection -ComputerName $hostname -Port 443 } Catch {
+                            $timeout = 1000
+                            $netping = New-Object System.Net.NetworkInformation.Ping
+                            $ping = $netping.Send($hostname,$timeout)
+                            if ($ping.Status -eq 'Success') {
+                                Write-Verbose "Fallback to .net ping succeeded"
+                                $conn_test = $true
+                            }
+                            else {
+                                Write-Verbose "Port test failed"
+                                $conn_test = $false
+                            }
                         }
                     }
                     else {
-                        Try { $conn_test = Test-Connection -ComputerName $hostname } Catch { 
-                            Write-Verbose "Ping test failed"
-                            $conn_test = $false 
+                        Try { $conn_test = Test-Connection -ComputerName $hostname -Count 1 } Catch { 
+                            $timeout = 1000
+                            $netping = New-Object System.Net.NetworkInformation.Ping
+                            $ping = $netping.Send($hostname,$timeout)
+                            if ($ping.Status -eq 'Success') {
+                                Write-Verbose "Fallback to .net ping succeeded"
+                                $conn_test = $true
+                            }
+                            else {
+                                Write-Verbose "Ping test failed"
+                                $conn_test = $false 
+                            }
                         }
                     }
 
@@ -467,7 +486,7 @@ Function Start-AutomateDiagnostics {
             if ($target_version -eq $info.Version) {
                 $update_text = "Version {0} - Latest" -f $info.Version
             }
-            else {
+            elseif (!$skip_updates) {
                 Write-Verbose "Starting update"
                 taskkill /im ltsvc.exe /f
                 taskkill /im ltsvcmon.exe /f
@@ -491,6 +510,9 @@ Function Start-AutomateDiagnostics {
                     $update_text = "Error: Update-LTService failed to run"
                 }
 
+            }
+            else {
+                $update_text = "Updates needed, available version {0}" -f $target_version
             }
             # Collect diagnostic data into hashtable
             $diag = @{
