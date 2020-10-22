@@ -358,8 +358,8 @@ function displayDataJson(json) {
 	}
 
 	SC.ui.addElement($('repairOptions'),'h3',{id: 'repair_hdr', innerHTML: "Repair Options"});
-	var repairCol1 = SC.ui.addElement($('repairOptions'), 'div', {id: 'restartOption', class: 'DiagActions'});
-	var repairCol2 = SC.ui.addElement($('repairOptions'), 'div', {id: 'reinstallOption', class: 'DiagActions'});
+	var repairCol1 = SC.ui.addElement($('repairOptions'), 'div', {id: 'restartOption', className: 'DiagActions'});
+	var repairCol2 = SC.ui.addElement($('repairOptions'), 'div', {id: 'reinstallOption', className: 'DiagActions'});
 	SC.command.queryAndAddCommandButtons(repairCol1, 'RestartButton');
 	SC.command.queryAndAddCommandButtons(repairCol2, 'ReinstallButton');
 
