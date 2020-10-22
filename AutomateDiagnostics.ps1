@@ -367,8 +367,8 @@ Function Test-JanusLoaded {
 
 Function Test-FailedSignup {
     try { 
-        $signup = get-content $env:windir\ltsvc\lterrors.txt | select-string "Agent Signup Failed" | Select-Object -Last 1 
-        if ($signup -match "Agent Signup Failed") { $true }
+        $signup = get-content $env:windir\ltsvc\lterrors.txt | select-string "Failed Signup" | Select-Object -Last 1 
+        if ($signup -match "Failed Signup") { $true }
         else {
             $false
         }
@@ -695,7 +695,7 @@ Function Start-AutomateDiagnostics {
             'lterrors' = $lterrors_enc
         }
     }
-    
+
 	# Output diagnostic data in JSON format - ps2.0 compatible
 	if ($psver -ge [version]"3.0.0.0") {
 		$output = $diag | ConvertTo-Json -depth 2
