@@ -695,13 +695,14 @@ Function Start-AutomateDiagnostics {
             'lterrors' = $lterrors_enc
         }
     }
-	Write-Output "!---BEGIN JSON---!"
-
+    
 	# Output diagnostic data in JSON format - ps2.0 compatible
 	if ($psver -ge [version]"3.0.0.0") {
-		$diag | ConvertTo-Json -depth 2
+		$output = $diag | ConvertTo-Json -depth 2
 	}
 	else {
-		$diag | ConvertTo-STJson | Write-Host # Added Write-Host to prevent wrapping on json
-	}
+		$output = $diag | ConvertTo-STJson
+    }
+    Write-Output "!---BEGIN JSON---!"
+    Write-Host $output
 }
