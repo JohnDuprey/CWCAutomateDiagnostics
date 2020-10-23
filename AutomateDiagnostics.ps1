@@ -401,7 +401,8 @@ Function Start-AutomateDiagnostics {
         $automate_server = "",
         [switch]$verbose,
         [switch]$include_lterrors,
-        [switch]$skip_updates
+        [switch]$skip_updates,
+        [switch]$use_sockets
     )
 
     if ($verbose) {
@@ -536,7 +537,7 @@ Function Start-AutomateDiagnostics {
                 }
                 else {
                     $compare_test = if (($hostname -eq $automate_server -and $automate_server -ne "") -or $automate_server -eq "") { $true } else { $false }
-                    if (Test-CommandExists -Command "Test-NetConnection") {
+                    if (Test-CommandExists -Command "Test-NetConnection" -and $use_sockets) {
                         Try { $conn_test = Test-NetConnection -ComputerName $hostname -Port 443 -ErrorAction Stop } Catch {
                             $timeout = 1000
                             $netping = New-Object System.Net.NetworkInformation.Ping
