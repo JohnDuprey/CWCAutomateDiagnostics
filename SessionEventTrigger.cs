@@ -31,7 +31,7 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					if (IsDiagnosticContent(output) && IsDiagResult(output)) {
 						var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
 						if (data[1] != "") {
-							string pattern = @"(?=(\{(?:(?:[^{}]++|\{(?1)\})++)\}))";
+							string pattern = @"(\{(.|\s)*\}";
 							Match m = Regex.Match(data[1],pattern);
 							if (m.Success) {
 								string json = "{"+m.Groups[1]+"}";

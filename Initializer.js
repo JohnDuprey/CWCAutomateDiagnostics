@@ -256,18 +256,43 @@ function parseDataHeaders(eventData) {
 }
 
 function displayAutomateDiagInfo(latestDiagnosticEvent, baseTime) {
-	var headers = parseDataHeaders(latestDiagnosticEvent.Data);
-	var output = latestDiagnosticEvent.Data;
-	var data = output.split("!---BEGIN JSON---!");
-	console.log(data[1]);
-	displayDataJson(parseJson(data[1]));	
-	$('lastUpdateContainer').innerHTML = SC.res['Diagnostics.LastUpdateField.Label'] + new Date(latestDiagnosticEvent.Time + baseTime);
+	try {
+		var headers = parseDataHeaders(latestDiagnosticEvent.Data);
+		var output = latestDiagnosticEvent.Data;
+		var data = output.split("!---BEGIN JSON---!");
+		console.log(data[1]);
+		displayDataJson(parseJson(data[1]));	
+		$('lastUpdateContainer').innerHTML = SC.res['Diagnostics.LastUpdateField.Label'] + new Date(latestDiagnosticEvent.Time + baseTime);
+	}
+	catch(e){
+		console.log("No diagnostic data to display")
+	}
+}
+
+function extractJSON(str) {
+    var firstOpen, firstClose, candidate;
+    firstOpen = str.indexOf('{', firstOpen + 1);
+    do {
+        firstClose = str.lastIndexOf('}');
+        if(firstClose <= firstOpen) {
+            return null;
+        }
+        do {
+            candidate = str.substring(firstOpen, firstClose + 1);
+            try {
+                var res = JSON.parse(candidate);
+                //console.log('...found');
+                return res;
+            }
+            catch(e) {}
+            firstClose = str.substr(0, firstClose).lastIndexOf('}');
+        } while(firstClose > firstOpen);
+        firstOpen = str.indexOf('{', firstOpen + 1);
+    } while(firstOpen != -1);
 }
 
 function parseJson(eventData) {
-	let re = /(?=\{(?:(?:[^{}]++|\{(?1)\})++)\})/;
-	var string = "{"+eventData.match(re)[1]+"}";
-	var json = JSON.parse(string);
+	var json = extractJSON(eventData)
 	console.log(json);
 	return json;
 }
