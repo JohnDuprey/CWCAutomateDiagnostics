@@ -265,7 +265,9 @@ function displayAutomateDiagInfo(latestDiagnosticEvent, baseTime) {
 }
 
 function parseJson(eventData) {
-	var json = JSON.parse(eventData);
+	let re = /(?=\{(?:(?:[^{}]++|\{(?1)\})++)\})/;
+	var string = "{"+eventData.match(re)[1]+"}";
+	var json = JSON.parse(string);
 	console.log(json);
 	return json;
 }

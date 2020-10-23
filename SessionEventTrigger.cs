@@ -31,19 +31,24 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					if (IsDiagnosticContent(output) && IsDiagResult(output)) {
 						var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
 						if (data[1] != "") {
-							DiagOutput diag = Deserialize(data[1]);
-							var session = sessionEventTriggerEvent.Session;
-							if (diag.version != null) {
-								session.CustomPropertyValues[agentversionproperty - 1] = diag.version;
+							string pattern = @"(?=(\{(?:(?:[^{}]++|\{(?1)\})++)\}))";
+							Match m = Regex.Match(data[1],pattern);
+							if (m.Success) {
+								string json = "{"+m.Groups[1]+"}";
+								DiagOutput diag = Deserialize(json);
+								var session = sessionEventTriggerEvent.Session;
+								if (diag.version != null) {
+									session.CustomPropertyValues[agentversionproperty - 1] = diag.version;
+								}
+								if (diag.id != null) {
+									session.CustomPropertyValues[agentidproperty - 1] = diag.id;
+								}
+								var sessionname = session.Name;
+								if (usemachinename == "1") {
+									sessionname = "";
+								}
+								SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, sessionname, session.IsPublic, session.Code, session.CustomPropertyValues);
 							}
-							if (diag.id != null) {
-								session.CustomPropertyValues[agentidproperty - 1] = diag.id;
-							}
-							var sessionname = session.Name;
-							if (usemachinename == "1") {
-								sessionname = "";
-							}
-							SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, sessionname, session.IsPublic, session.Code, session.CustomPropertyValues);
 						}
 					}
 					else if (IsDiagnosticContent(output) && IsRepairResult(output)) {
