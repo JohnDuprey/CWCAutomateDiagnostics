@@ -452,7 +452,7 @@ Function Start-AutomateDiagnostics {
     $lterrors_exists = Test-Path -Path (Join-Path $env:windir "\ltsvc\lterrors.txt")
     
     if ($include_lterrors) {
-        $lterrors = if ($lterrors_exists) { Get-Content -Raw -Path (Join-Path $env:windir "\ltsvc\lterrors.txt") } else {""}
+        $lterrors = if ($lterrors_exists) { (Get-Content -Path (Join-Path $env:windir "\ltsvc\lterrors.txt")) -join "`n" } else {""}
         $lterrors_enc = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($lterrors))
     }
     else { $lterrors_enc = "" }
@@ -656,7 +656,7 @@ Function Start-AutomateDiagnostics {
             }
         }
         Catch { # LTPosh loaded, issue with agent
-            $_.Exception.Message
+            $exception = $_.Exception.Message
             $repair = if (-not ($ltsvc_path_exists) -or $ltsvcmon_check.Status -eq "Not Detected" -or $ltservice_check.Status -eq "Not Detected" -or $null -eq $id -or $janus_res -eq $false) { "Reinstall" } else { "Restart" }
             if ($null -eq $version -or $ltsvc_path_exists -eq $false) { $version = "Agent error" }
             if ($janus_res -eq $false) { $version = "Janus failure" }
@@ -675,6 +675,7 @@ Function Start-AutomateDiagnostics {
                 'signup_failure' = $signup_failure
                 'agent_crypto_failure' = $agent_crypto_failure
                 'lterrors' = $lterrors_enc
+                'exception' = $exception
             }
         }
     }
@@ -703,6 +704,6 @@ Function Start-AutomateDiagnostics {
 	else {
 		$output = $diag | ConvertTo-STJson
     }
-    Write-Output "!---BEGIN JSON---!"
+    Write-Host "!---BEGIN JSON---!"
     Write-Host $output
 }
