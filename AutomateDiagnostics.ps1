@@ -476,8 +476,9 @@ Function Start-AutomateDiagnostics {
             $info = Get-LTServiceInfo
 
             # Get checkin / heartbeat times to DateTime
-	        $lastsuccess = Get-Date $info.LastSuccessStatus
 	        $lasthbsent = Get-Date $info.HeartbeatLastSent
+	        # This could throw exception because it is only returned if there has been a SuccessStatus
+			if ($info.LastSuccessStatus) {$lastsuccess = Get-Date $info.LastSuccessStatus} 
 	        $lasthbrcv = Get-Date $info.HeartbeatLastReceived
 
             # Check online and heartbeat statuses
@@ -515,7 +516,8 @@ Function Start-AutomateDiagnostics {
                 $ltservice_check = serviceCheck('LTService')
                 $ltsvcmon_check = serviceCheck('LTSVCMon')
                 # Get checkin / heartbeat times to DateTime
-                $lastsuccess = Get-Date $info.LastSuccessStatus
+                # This could throw exception because it is only returned if there has been a SuccessStatus
+				if ($info.LastSuccessStatus) {$lastsuccess = Get-Date $info.LastSuccessStatus} 
                 $lasthbsent = Get-Date $info.HeartbeatLastSent
                 $lasthbrcv = Get-Date $info.HeartbeatLastReceived
                 $online = $lastsuccess -ge $online_threshold
