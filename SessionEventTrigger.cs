@@ -13,49 +13,56 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 {
 	public Proc GetDeferredActionIfApplicable(SessionEventTriggerEvent sessionEventTriggerEvent)
 	{
-		var maintenance = ExtensionContext.Current.GetSettingValue("MaintenanceMode");
-		var usemachinename = ExtensionContext.Current.GetSettingValue("SetUseMachineName");
-		var agentidproperty = Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentIDCustomProperty"));
-		var agentversionproperty = Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentVersionCustomProperty"));
-		
-		if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected && 
-			sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest && maintenance == "0" && sessionEventTriggerEvent.Session.ActiveConnections.Where(_ => _.ProcessType == ProcessType.Host).Count() == 0) {
-			return (Proc)delegate {	RunDiagnostics(sessionEventTriggerEvent); };
+		if (
+			sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected 
+			&& sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest 
+			&& ExtensionContext.Current.GetSettingValue("MaintenanceMode") == "0" 
+			&& sessionEventTriggerEvent.Session.ActiveConnections.Where(_ => _.ProcessType == ProcessType.Host).Count() == 0
+		) {
+			return () => ScreenConnect.TaskExtensions.InvokeSync(async delegate {
+				 RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current); 
+			});
 		}
-		else if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.RanCommand) {
-			return (Proc)delegate
-				{
-					var sessionDetails = SessionManagerPool.Demux.GetSessionDetails(sessionEventTriggerEvent.Session.SessionID);
-                    string output = sessionEventTriggerEvent.SessionEvent.Data;
-
-					if (IsDiagnosticContent(output) && IsDiagResult(output)) {
-						var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
-						if (data[1] != "") {
-							string pattern = @"(\{(.|\s)*\}";
-							Match m = Regex.Match(data[1],pattern);
-							if (m.Success) {
-								string json = "{"+m.Groups[1]+"}";
-								DiagOutput diag = Deserialize(json);
+		else if (
+			sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.RanCommand 
+			&& IsDiagnosticContent(sessionEventTriggerEvent.SessionEvent.Data)
+		) {
+			return () => ScreenConnect.TaskExtensions.InvokeSync(async delegate
+			{
+				try
+					{
+						var sessionDetails = SessionManagerPool.Demux.GetSessionDetailsAsync(sessionEventTriggerEvent.Session.SessionID);
+	                    string output = sessionEventTriggerEvent.SessionEvent.Data;
+	                    
+						if (IsDiagResult(output)) {
+							var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
+							if (data[1] != "") {
+								DiagOutput diag = Deserialize(data[1]);
 								var session = sessionEventTriggerEvent.Session;
 								if (diag.version != null) {
-									session.CustomPropertyValues[agentversionproperty - 1] = diag.version;
+									session.CustomPropertyValues[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentVersionCustomProperty")) - 1] = diag.version;
 								}
 								if (diag.id != null) {
-									session.CustomPropertyValues[agentidproperty - 1] = diag.id;
+									session.CustomPropertyValues[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentIDCustomProperty")) - 1] = diag.id;
 								}
 								var sessionname = session.Name;
-								if (usemachinename == "1") {
+								if (ExtensionContext.Current.GetSettingValue("SetUseMachineName") == "1") {
 									sessionname = "";
 								}
-								SessionManagerPool.Demux.UpdateSession("AutomateDiagnostics", session.SessionID, sessionname, session.IsPublic, session.Code, session.CustomPropertyValues);
+								await SessionManagerPool.Demux.UpdateSessionAsync("AutomateDiagnostics", session.SessionID, sessionname, session.IsPublic, session.Code, session.CustomPropertyValues);
 							}
 						}
+						else if (IsRepairResult(output)) {
+							RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
+						}
+					} 
+					catch
+					{
+						//var session = sessionEventTriggerEvent.Session;
+						//session.CustomPropertyValues[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentVersionCustomProperty")) - 1] = "Caught";
+						//don't care atm
 					}
-					else if (IsDiagnosticContent(output) && IsRepairResult(output)) {
-						RunDiagnostics(sessionEventTriggerEvent);
-					}
-
-				};
+			});
 		}
 		return null;
 	}
@@ -66,38 +73,36 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
         	return ser.ReadObject(ms) as DiagOutput;
         }
     }
-	private void RunDiagnostics(SessionEventTriggerEvent sessionEventTriggerEvent) {
-		var sessionDetails = SessionManagerPool.Demux.GetSessionDetails(sessionEventTriggerEvent.Session.SessionID);
+	private async void RunDiagnostics(SessionEventTriggerEvent sessionEventTriggerEvent, ExtensionContext extensionContext) {
+		var sessionDetails = await SessionManagerPool.Demux.GetSessionDetailsAsync(sessionEventTriggerEvent.Session.SessionID);
 		if (sessionDetails.Session.SessionType == SessionType.Access) {
-			var ltposh = ExtensionContext.Current.GetSettingValue("PathToLTPoSh");
-			var diag = ExtensionContext.Current.GetSettingValue("PathToDiag");
-			var linuxdiag = ExtensionContext.Current.GetSettingValue("PathToMacLinuxDiag");
-			var server = ExtensionContext.Current.GetSettingValue("AutomateHostname");
+			var ltposh = extensionContext.GetSettingValue("PathToLTPoSh");
+			var diag = extensionContext.GetSettingValue("PathToDiag");
+			var linuxdiag = extensionContext.GetSettingValue("PathToMacLinuxDiag");
+			var server = extensionContext.GetSettingValue("AutomateHostname");
 			var os = sessionDetails.Session.GuestInfo.OperatingSystemName;
-			var timeout = ExtensionContext.Current.GetSettingValue("Timeout");
+			var timeout = extensionContext.GetSettingValue("Timeout");
 			var command = "";
 
-			if ( os.StartsWith("Windows") ) { 
+			if ( os.Contains("Windows") ) { 
 				command = "#!ps\n#maxlength=100000\n#timeout="+ timeout +"\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\necho ''\n$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; Try {(new-object Net.WebClient).DownloadString('"+ diag +"') | iex; Start-AutomateDiagnostics -ltposh '"+ ltposh +"' -automate_server '"+server+"'} Catch { $_.Exception.Message; Write-Output '!---BEGIN JSON---!'; Write-Output '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
 			}
-			else if ( os.StartsWith("Mac") || os.StartsWith("Linux") ) {
+			else if ( os.Contains("Mac") || os.Contains("Linux") ) {
 				command = "#!sh\n#maxlength=100000\n#timeout="+ timeout +"\necho 'DIAGNOSTIC-RESPONSE/1'\necho 'DiagnosticType: Automate'\necho 'ContentType: json'\nurl="+linuxdiag+"; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | python); else echo $($WGET -q -O - --no-check-certificate $url | python); fi";
 			}
 			else { command = "@echo off\necho No OS Detected, try running the diagnostic again"; }
 			
-			SessionManagerPool.Demux.AddSessionEvent(
+			await SessionManagerPool.Demux.AddSessionEventAsync(
 				sessionEventTriggerEvent.Session.SessionID,
-				new SessionEvent
-				{
-					EventType = SessionEventType.QueuedCommand,
-					Host = "AutomateDiagnostics",
-					Data = command
-				}
+				SessionEventType.QueuedCommand,
+				SessionEventAttributes.NeedsProcessing,
+				"AutomateDiagnostics",
+				command
 			);
 		}
 	}
 	private bool IsDiagnosticContent(string eventData) {
-		if (eventData.StartsWith("DIAGNOSTIC-RESPONSE/1") || eventData.StartsWith("\ufeffDIAGNOSTIC-RESPONSE/1")) {
+		if (eventData.Contains("DIAGNOSTIC-RESPONSE/1") || eventData.Contains("\ufeffDIAGNOSTIC-RESPONSE/1")) {
 			return true;
 		} 
 		else { 
@@ -150,7 +155,7 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 					}   
 					catch(Exception e)   
 					{   
-							//Console.WriteLine(e);   
+							Console.WriteLine(e);   
 					}   
 			}   
 	}
