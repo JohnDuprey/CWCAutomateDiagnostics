@@ -182,7 +182,6 @@ function sendCommand(eventArgs) {
 function getAutomateInputCommand(diagnosticType, operatingSystem) {
 	var headers = getHeaders(operatingSystem);
 	headers.DiagnosticType = diagnosticType;
-	console.log(headers);
 	var commandText = getAutomateCommandText(headers);
 	var timeout = getTimeout();
 	var emptyLinePrefix = '';
@@ -203,12 +202,14 @@ function getAutomateInputCommand(diagnosticType, operatingSystem) {
 }
 
 function getHeaders(operatingSystem) {
-	console.log(operatingSystem);
-	if (operatingSystem.startsWith("Windows")) {
-		return { Processor: "ps", Interface: "powershell", ContentType: "json", shaBang: "ps", modifier: "echo \"", delimiter: '\"' };
+	//console.log(operatingSystem);
+	if (operatingSystem.match("Windows")) {
+		return { Processor: "ps", Interface: "powershell", ContentType: "json", shaBang: "ps", modifier: "echo \"", delimiter: '\"', OperatingSystem: "Windows" };
 	}
-	else {
-		return { Processor: "sh", Interface: "bash", ContentType: "json", shaBang: "sh", modifier: "echo ", delimiter: '' };
+	else if (operatingSystem.startsWith("Mac OS")) {
+		return { Processor: "sh", Interface: "bash", ContentType: "json", shaBang: "sh", modifier: "echo ", delimiter: '', OperatingSystem: "Mac" };
+	} else {
+		return { Processor: "sh", Interface: "bash", ContentType: "json", shaBang: "sh", modifier: "echo ", delimiter: '', OperatingSystem: "Linux" };
 	}
 }
 
@@ -263,9 +264,9 @@ function displayAutomateDiagInfo(latestDiagnosticEvent, baseTime) {
 		var headers = parseDataHeaders(latestDiagnosticEvent.Data);
 		var output = latestDiagnosticEvent.Data;
 		var data = output.split("!---BEGIN JSON---!");
-		console.log(data[1]);
+		//console.log(data[1]);
 		displayDataJson(parseJson(data[1]));
-		$('lastUpdateContainer').innerHTML = SC.res['Diagnostics.LastUpdateField.Label'] + new Date(latestDiagnosticEvent.Time + baseTime);
+		$('lastUpdateContainer').innerHTML = SC.res['Diagnostics.LastUpdateField.Label'] + new Date(latestDiagnosticEvent.Time + baseTime).toLocaleString();
 	}
 	catch (e) {
 		console.log("No diagnostic data to display");
@@ -298,7 +299,7 @@ function extractJSON(str) {
 
 function parseJson(eventData) {
 	var json = extractJSON(eventData)
-	console.log(json);
+	//console.log(json);
 	return json;
 }
 
@@ -442,16 +443,17 @@ function timeDifference(current, previous) {
 }
 
 function getAutomateCommandText(headers) {
-	switch (headers.Processor + '/' + headers.Interface + '/' + headers.ContentType + '/' + headers.DiagnosticType) {
-		case "ps/powershell/json/Automate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; Try { (new-object Net.WebClient).DownloadString('" + getAutomateDiagnosticsURL() + "') | iex; Start-AutomateDiagnostics -ltposh '" + getLTPoSh() + "' -include_lterrors -automate_server '" + getLTServer() + "' " + getVerbose() + "} Catch { $_.Exception.Message; Write-Output '!---BEGIN JSON---!'; Write-Output '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
-		case "ps/powershell/json/RestartAutomate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; (new-object Net.WebClient).DownloadString('" + getLTPoSh() + "') | iex; Restart-LTService";
-		case "ps/powershell/json/ReinstallAutomate":
+	switch (headers.Processor + '/' + headers.OperatingSystem + '/' + headers.Interface + '/' + headers.ContentType + '/' + headers.DiagnosticType) {
+		case "ps/Windows/powershell/json/Automate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; Try { (new-object Net.WebClient).DownloadString('" + getAutomateDiagnosticsURL() + "') | iex; Start-AutomateDiagnostics -ltposh '" + getLTPoSh() + "' -include_lterrors -automate_server '" + getLTServer() + "' " + getVerbose() + "} Catch { $_.Exception.Message; Write-Output '!---BEGIN JSON---!'; Write-Output '{\"version\": \"Error loading AutomateDiagnostics\"}' }";
+		case "ps/Windows/powershell/json/RestartAutomate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; (new-object Net.WebClient).DownloadString('" + getLTPoSh() + "') | iex; Restart-LTService";
+		case "ps/Windows/powershell/json/ReinstallAutomate":
 			var txtlocationid = $('#locationidreinstall').value;
 			var txtinstallertoken = $('#installertoken').value;
 			if (isNaN(txtlocationid)) { txtlocationid = "1"; }
 			return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12};(new-object Net.WebClient).DownloadString('" + getLTPoSh() + "') | iex; Reinstall-LTService -SkipDotNet -Server https://" + getLTServer() + " -LocationID " + txtlocationid + " -InstallerToken " + txtinstallertoken;
 			return
-		case "sh/bash/json/Automate": return "url=" + getLinuxDiagnosticsURL() + "; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | python - -e); else echo $($WGET -q -O - --no-check-certificate $url | python - -e); fi";
+		case "sh/Linux/bash/json/Automate": return "url=" + getLinuxDiagnosticsURL() + "; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | python - -e); else echo $($WGET -q -O - --no-check-certificate $url | python - -e); fi";
+		case "sh/Mac/bash/json/Automate": return "url=" + getMacDiagnosticsURL() + "; CURL=$(command -v curl); WGET=$(command -v wget); if [ ! -z $CURL ]; then echo $($CURL -s $url | sh); else echo $($WGET -q -O - --no-check-certificate $url | sh); fi";
 		default: throw "unknown os";
 	}
 }
