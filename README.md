@@ -41,6 +41,8 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 - Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot). RanCommand events are parsed for JSON output and the version number is stored in CustomProperty7. Agent ID is stored as CustomProperty6. (NOTE: To rename the custom properties or reset the Session group, set the createdVersionSessionGroup setting to false, also do this if you change the custom property value number)
 - Script can be manually invoked from the Automate tab on the Host screen or in the drop down menu when selecting sessions.
 
+## Sample Output
+
 | Diagnostic Details  | Agent Logs |
 | ------------- | ------------- |
 | ![Details](https://user-images.githubusercontent.com/41485711/212959588-a29b5173-bf9f-427d-9ae8-47a5c2593143.png) | ![LTRrrors](https://user-images.githubusercontent.com/41485711/212806625-1f95e9a1-3c16-489b-9219-5a90a36a4f3f.png) |
