@@ -202,10 +202,11 @@ function getAutomateInputCommand(diagnosticType, operatingSystem) {
 }
 
 function getHeaders(operatingSystem) {
-	//console.log(operatingSystem);
+	//2023.01.16 -- Joe McCall | Windows matching was not working reliably, because Windows OS does not start with Windows on newer OS (Microsoft Windows 1x)
 	if (operatingSystem.match("Windows")) {
 		return { Processor: "ps", Interface: "powershell", ContentType: "json", shaBang: "ps", modifier: "echo \"", delimiter: '\"', OperatingSystem: "Windows" };
 	}
+	//2023.01.16 -- Joe McCall | Split Mac OS and Linux
 	else if (operatingSystem.startsWith("Mac OS")) {
 		return { Processor: "sh", Interface: "bash", ContentType: "json", shaBang: "sh", modifier: "echo ", delimiter: '', OperatingSystem: "Mac" };
 	} else {
@@ -378,8 +379,8 @@ function displayDataJson(json) {
 		SC.ui.addElement($('ltsvcmon_row'), 'td', { id: 'ltsvc', innerHTML: ltsvcmon_status + " " + ltsvcmon_txt });
 	}
 
-	// 2023.01.16 -- Joe McCall | Improved readability; LocationID now lines up with the rest of the text on the right-hand side.
 	if ("locationid" in json) {
+		// 2023.01.16 -- Joe McCall | Improved readability; LocationID now lines up with the rest of the text on the right-hand side.
 		var spacer = "<span class='success'>&nbsp;&nbsp;&nbsp;</span>";
 		SC.ui.addElement($('dataTable'), 'tr', { id: 'locationid_row' });
 		SC.ui.addElement($('locationid_row'), 'th', { id: 'locationid_hdr', innerHTML: 'Location ID' });
@@ -442,6 +443,7 @@ function timeDifference(current, previous) {
 		return 'approximately ' + Math.round(elapsed / msPerYear) + ' years ago';
 }
 
+// 2023.01.16 -- Joe McCall | Expanded cases and variables to add OS check so Mac and Linux commands are distinct (sh or python)
 function getAutomateCommandText(headers) {
 	switch (headers.Processor + '/' + headers.OperatingSystem + '/' + headers.Interface + '/' + headers.ContentType + '/' + headers.DiagnosticType) {
 		case "ps/Windows/powershell/json/Automate": return "$WarningPreference='SilentlyContinue'; IF([Net.SecurityProtocolType]::Tls) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls}; IF([Net.SecurityProtocolType]::Tls11) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls11}; IF([Net.SecurityProtocolType]::Tls12) {[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12}; Try { (new-object Net.WebClient).DownloadString('" + getAutomateDiagnosticsURL() + "') | iex; Start-AutomateDiagnostics -ltposh '" + getLTPoSh() + "' -include_lterrors -automate_server '" + getLTServer() + "' " + getVerbose() + "} Catch { $_.Exception.Message; Write-Output '!---BEGIN JSON---!'; Write-Output '{\"version\": \"Error loading AutomateDiagnostics\"}' }";

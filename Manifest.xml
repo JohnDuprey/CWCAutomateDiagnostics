@@ -24,7 +24,7 @@
 			<DefaultValue>https://raw.githubusercontent.com/elevatejoe/CWCAutomateDiagnostics/master/AutomateDiagnostics.py</DefaultValue>
 		</Setting>
 		<Setting Name="PathToMacDiag" IsServerOnly="false">
-			<Description>The URL for launching AutomateDiagnostics.py</Description>
+			<Description>The URL for launching AutomateDiagnostics.sh</Description>
 			<DefaultValue>https://raw.githubusercontent.com/elevatejoe/CWCAutomateDiagnostics/master/AutomateDiagnostics.sh</DefaultValue>
 		</Setting>
 		<Setting Name="AutomateHostname" IsServerOnly="false">

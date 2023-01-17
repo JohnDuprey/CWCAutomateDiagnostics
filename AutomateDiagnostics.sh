@@ -59,8 +59,14 @@ month=$(convertFromJson "$data" 'last_contact.month')
 year=$(convertFromJson "$data" 'last_contact.year')
 lastcontact=$(echo "$month/$day_of_month/$year $hour:$min:$sec")
 
-# TODO
+# collect agent logs
 lterrors=""
+log_file="/usr/local/ltechagent/agent.log"
+
+if [ -f "$log_file" ]; then
+    lterrors_str=$(sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/"/\&quot;/g' -e "s/'/\&apos;/g" "$log_file")
+    lterrors=$(echo "$lterrors_str" | base64)
+fi
 
 json=$(
     cat <<EOF
