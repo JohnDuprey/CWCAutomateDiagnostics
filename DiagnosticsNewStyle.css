@@ -19,6 +19,8 @@
 .failed {
 	font-weight: bold !important;
 	font-size: 14px;
+	/* 2023.01.16 -- Joe McCall | Improving readability */
+	padding-right: 8px;
 }
 
 .success {
@@ -70,7 +72,31 @@
 }
 
 #lterrors_file{
-	white-space: pre-wrap;
+	/*
+	2023.01.16 -- Joe McCall | Improving readability
+		- log file now stands out distinctly from the rest of the tab
+		- text no longer wraps and instead users scrollbars.
+	*/
+	font-size: 11px;
+	background-color: #252525;
+	overflow:auto;
+	padding: 5px 0px 0px 5px;
+	max-height: 395px;
+}
+
+/* 2023.01.16 -- Joe McCall | To allow the Repair/Reinstall buttons to sit in-line. */
+
+.DiagActions {
+	display: inline-block;
+	width: auto;
+}
+
+#restartOption{
+	margin: 0px 10px 0px 0px;
+}
+
+#reinstallOption{
+	margin: 0px;
 }
 
 .DiagActions a:link, .DiagActions a:visited{
@@ -78,11 +104,22 @@
     text-decoration: inherit;
     color: #FFF !important;
     border-radius: 6px;
-    margin: 0px 15px;
-    padding: 8px 0px;
-    font-size: 14px;
+    padding: 8px 10px;
+    font-size: 13px;
     font-weight: 500;
     text-align: center;
-	width: 40%;
+	width: auto;
 	background-color: #026CCF;
+}
+
+/* 2023.01.16 -- Joe McCall | Quality of life. */
+
+.DiagActions a:hover {
+	background-color: #014e95 !important;;
+}
+
+/* 2023.01.16 -- Joe McCall | Reduce wasted space */
+
+#tableDetails, #dataContainer{
+	margin: 0px 0px 8px 0px !important;
 }
