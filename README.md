@@ -20,7 +20,7 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 - Install Automate Diagnostics from the ConnectWise Control Marketplace (version 1.0.6.7)
 
 ### Manual Instructions
-- To install this version, 1.0.7.2
+> To install this version, 1.0.7.2:
 1. Create a new directory for the extension - %programfiles(x86)%\ScreenConnect\App_Extensions\e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76
 2. Download the lastest master.zip and extract all files into the directory 
 3. Enable the extension in the administration page.
@@ -30,15 +30,21 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 2. Additionally, find the Guid for the Control extension (manual one is listed above, cloud is 26a42e0d-6233-4a66-9575-6e05a248cd26)
 3. Build the URL with the extension Guid and add that to the settings to avoid calling the script from GitHub. (e.g https://control_url:port/App_Extensions/<extension_guid>/AutomateDiagnostics.ps1)
 4. Edit the Control web.config file (make a backup first): Under the `<httpHandlers>` section, add verb entries for each script file:
-	`<add verb="GET,HEAD" path="App_Extensions/e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76/AutomateDiagnostics.ps1" type="System.Web.DefaultHttpHandler" />`
-	`<add verb="GET,HEAD" path="App_Extensions/e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76/AutomateDiagnostics.py" type="System.Web.DefaultHttpHandler" />`
-	`<add verb="GET,HEAD" path="App_Extensions/e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76/AutomateDiagnostics.sh" type="System.Web.DefaultHttpHandler" />`
+
+```
+<add verb="GET,HEAD" path="App_Extensions/e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76/AutomateDiagnostics.ps1" type="System.Web.DefaultHttpHandler" />
+<add verb="GET,HEAD" path="App_Extensions/e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76/AutomateDiagnostics.py" type="System.Web.DefaultHttpHandler" />
+<add verb="GET,HEAD" path="App_Extensions/e4dd11eb-3c5e-407c-a7b8-a8ea5e6dbb76/AutomateDiagnostics.sh" type="System.Web.DefaultHttpHandler" />
+```
 
 ## Usage
 - Script is automatically executed on GuestConnect event (e.g. Service/Computer reboot). RanCommand events are parsed for JSON output and the version number is stored in CustomProperty7. Agent ID is stored as CustomProperty6. (NOTE: To rename the custom properties or reset the Session group, set the createdVersionSessionGroup setting to false, also do this if you change the custom property value number)
 - Script can be manually invoked from the Automate tab on the Host screen or in the drop down menu when selecting sessions.
 
-![example](https://i.snag.gy/P21qyJ.jpg)
+| Diagnostic Details  | Agent Logs |
+| ------------- | ------------- |
+| ![Details](https://user-images.githubusercontent.com/41485711/212806555-2bdc37d4-2103-478a-b502-4fccdde487e8.png) | ![LTRrrors](https://user-images.githubusercontent.com/41485711/212806625-1f95e9a1-3c16-489b-9219-5a90a36a4f3f.png) |
+
 
 ## Troubleshooting
 Set Verbose = 1 in the Extension settings to log more data for on-demand diagnostics. This does not apply to Guest Connect events.
