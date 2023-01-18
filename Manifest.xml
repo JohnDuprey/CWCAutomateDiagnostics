@@ -17,15 +17,15 @@
 		</Setting>
 		<Setting Name="PathToDiag" IsServerOnly="false">
 			<Description>The URL for launching AutomateDiagnostics.ps1</Description>
-			<DefaultValue>https://raw.githubusercontent.com/elevatejoe/CWCAutomateDiagnostics/master/AutomateDiagnostics.ps1</DefaultValue>
+			<DefaultValue>https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.ps1</DefaultValue>
 		</Setting>
 		<Setting Name="PathToLinuxDiag" IsServerOnly="false">
 			<Description>The URL for launching AutomateDiagnostics.py</Description>
-			<DefaultValue>https://raw.githubusercontent.com/elevatejoe/CWCAutomateDiagnostics/master/AutomateDiagnostics.py</DefaultValue>
+			<DefaultValue>https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.py</DefaultValue>
 		</Setting>
 		<Setting Name="PathToMacDiag" IsServerOnly="false">
 			<Description>The URL for launching AutomateDiagnostics.sh</Description>
-			<DefaultValue>https://raw.githubusercontent.com/elevatejoe/CWCAutomateDiagnostics/master/AutomateDiagnostics.sh</DefaultValue>
+			<DefaultValue>https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.sh</DefaultValue>
 		</Setting>
 		<Setting Name="AutomateHostname" IsServerOnly="false">
 			<Description>The hostname for your automate server (exclude https://).</Description>
