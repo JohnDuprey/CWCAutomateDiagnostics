@@ -54,6 +54,7 @@ Set Verbose = 1 in the Extension settings to log more data for on-demand diagnos
 ## Credit
 - CTaylor's Labtech-Powershell-Module - https://github.com/LabtechConsulting/LabTech-Powershell-Module
 - Noah Tatum - AutomateDiagnostics.sh - https://github.com/noaht8um/CWCAutomateDiagnostics/blob/master/AutomateDiagnostics.sh
+- Joe McCall - Bug fixes for CW Control 22.9+
 - MSPGeek Community - https://mspgeek.com 
 - CWC Tags Extension for CustomProperty session group
 - CWA Extension for CustomProperty setting via C#
