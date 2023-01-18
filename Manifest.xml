@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ExtensionManifest>
-	<Version>1.0.7.1</Version>
+	<Version>1.0.7.2</Version>
 	<Name>Automate Diagnostics</Name>
 	<Author>John Duprey - Complete Network</Author>
 	<ShortDescription>Diagnoses Automate Agents from CW Control. Visit https://github.com/johnduprey/CWCAutomateDiagnostics for the Readme.</ShortDescription>
@@ -19,9 +19,13 @@
 			<Description>The URL for launching AutomateDiagnostics.ps1</Description>
 			<DefaultValue>https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.ps1</DefaultValue>
 		</Setting>
-		<Setting Name="PathToMacLinuxDiag" IsServerOnly="false">
+		<Setting Name="PathToLinuxDiag" IsServerOnly="false">
 			<Description>The URL for launching AutomateDiagnostics.py</Description>
 			<DefaultValue>https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.py</DefaultValue>
+		</Setting>
+		<Setting Name="PathToMacDiag" IsServerOnly="false">
+			<Description>The URL for launching AutomateDiagnostics.sh</Description>
+			<DefaultValue>https://raw.githubusercontent.com/johnduprey/CWCAutomateDiagnostics/master/AutomateDiagnostics.sh</DefaultValue>
 		</Setting>
 		<Setting Name="AutomateHostname" IsServerOnly="false">
 			<Description>The hostname for your automate server (exclude https://).</Description>

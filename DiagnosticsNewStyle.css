@@ -1,24 +1,30 @@
 .Automate {
-	text-align:center;
-	margin-top: 5px;
+	text-align: center;
+	margin: 0.2em 0em;
 }
 
-.Automate > table {
-	text-align:left;
-	margin-left: auto; 
+.Automate table {
+	text-align: left;
+	margin-left: auto;
 	margin-right: auto;
-	table-layout:fixed;
+	table-layout: fixed;
 }
 
-.HiddenButton { 
+.Automate .Header {
+	cursor: auto;
+	user-select: auto;
+}
+
+.HiddenButton {
 	display: none;
 }
-
 
 .success,
 .failed {
 	font-weight: bold !important;
-	font-size: 14px;
+	font-size: 1em;
+	/* 2023.01.16 -- Joe McCall | Improving readability */
+	padding-right: 0.3em;
 }
 
 .success {
@@ -30,35 +36,58 @@
 }
 
 .TabAutomate {
-	background-image:url('Automate.png');
+	background-image: url('Automate.png');
 }
 
-#diagnosticButton{
-	width:100%;
-	z-index:5;
+#diagnosticButton {
+	width: 100%;
+	z-index: 5;
 }
 
-#dataTableHeader, #dataTableData{
-	border:0px;
-	padding:3px;
-	font-size:10px;
-	word-wrap:break-word
+/*a.GetInfo.Automate.HasText {
+	display: inline-block;
+	width: 13em;
+	text-decoration: inherit;
+	color: #FFF !important;
+	border-radius: 0.2em;
+	padding: 0.4em 0.5em;
+	font-size: 1.0em;
+	font-weight: 500;
+	text-align: left;
+	background-color: #026CCF;
+}*/
+
+#dataTableHeader,
+#dataTableData {
+	border: 0px;
+	padding: 0.2em;
+	font-size: 1.0em;
+	word-wrap: break-word
 }
 
-#lastUpdateContainer{
-	top:5%;
-	padding-top: 10px;
+#diagButtonContainer {
+	text-align: left;
+	margin-top: 0 !important;
 }
 
-#dataTable{
-	top:10%;
-	width:95%;
+#lastUpdateContainer {
+	display: inline-block;
+	font-size: 0.9em;
 }
 
-#repairOptions, #dataContainer {
+#dataTable {
+	top: 10%;
+	width: 95%;
+}
+
+#repairOptions,
+#dataContainer,
+#diagTopContainer,
+#detailsPanel {
 	display: inline-block;
 	text-align: left;
 	width: 95%;
+	margin-top: 0 !important;
 }
 
 #lterrors {
@@ -69,20 +98,83 @@
 	height: 100%;
 }
 
-#lterrors_file{
-	white-space: pre-wrap;
+#lterrors_file {
+	/*
+	2023.01.16 -- Joe McCall | Improving readability
+		- log file now stands out distinctly from the rest of the tab
+		- text no longer wraps and instead users scrollbars.
+	*/
+	font-size: 0.9em;
+	background-color: #252525;
+	color: #FFFFFF;
+	overflow: auto;
+	padding: 0.5em 0em 0em 0.5em;
+	height: 36em;
+	resize: both;
 }
 
-.DiagActions a:link, .DiagActions a:visited{
+/* 2023.01.16 -- Joe McCall | To allow the Repair/Reinstall buttons to sit in-line. */
+
+.DiagActions {
+	display: inline-block;
+	width: 13em;
+}
+
+#restartOption,
+#diagButtonContainer {
+	margin-right: 1em;
+}
+
+#reinstallOption,
+#lastUpdateContainer {
+	margin: 0em;
+}
+
+.DiagActions a:link,
+.DiagActions a:visited {
 	display: block;
-    text-decoration: inherit;
-    color: #FFF !important;
-    border-radius: 6px;
-    margin: 0px 15px;
-    padding: 8px 0px;
-    font-size: 14px;
-    font-weight: 500;
-    text-align: center;
-	width: 40%;
+	text-decoration: inherit;
+	color: #FFF !important;
+	border-radius: 6px;
+	padding: 0.4em 0.5em;
+	font-size: 1.0em;
+	font-weight: 500;
+	text-align: center;
+	width: auto;
 	background-color: #026CCF;
+}
+
+/* 2023.01.16 -- Joe McCall | Quality of life. */
+
+.Automate a:hover {
+	background-color: #014e95 !important;
+}
+
+/* 2023.01.16 -- Joe McCall | Reduce wasted space */
+
+#tableDetails,
+#dataContainer {
+	margin: 0em 0em 0.2em 0em !important;
+}
+
+.Automate th {
+	width: 11.5em;
+}
+
+.Automate td {
+	white-space: nowrap;
+}
+
+.Automate div,
+.Automate p,
+.Automate h1,
+.Automate h2,
+.Automate h3,
+.Automate h4,
+.Automate hr,
+.Automate dt,
+.Automate dd,
+.Automate table
+.Automate pre {
+	margin: 0.2em 0em;
 }
