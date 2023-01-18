@@ -1,19 +1,23 @@
 .Automate {
 	text-align: center;
-	margin-top: 0.4em;
+	margin: 0.2em 0em;
 }
 
-.Automate>table {
+.Automate table {
 	text-align: left;
 	margin-left: auto;
 	margin-right: auto;
 	table-layout: fixed;
 }
 
+.Automate .Header {
+	cursor: auto;
+	user-select: auto;
+}
+
 .HiddenButton {
 	display: none;
 }
-
 
 .success,
 .failed {
@@ -40,18 +44,18 @@
 	z-index: 5;
 }
 
-a.GetInfo.Automate.HasText {
+/*a.GetInfo.Automate.HasText {
 	display: inline-block;
+	width: 13em;
 	text-decoration: inherit;
 	color: #FFF !important;
 	border-radius: 0.2em;
 	padding: 0.4em 0.5em;
 	font-size: 1.0em;
 	font-weight: 500;
-	text-align: center;
-	width: auto;
+	text-align: left;
 	background-color: #026CCF;
-}
+}*/
 
 #dataTableHeader,
 #dataTableData {
@@ -61,11 +65,14 @@ a.GetInfo.Automate.HasText {
 	word-wrap: break-word
 }
 
+#diagButtonContainer {
+	text-align: left;
+	margin-top: 0 !important;
+}
+
 #lastUpdateContainer {
-	top: 5%;
-	padding-top: .4em;
+	display: inline-block;
 	font-size: 0.9em;
-	margin-top: 0em !important;
 }
 
 #dataTable {
@@ -74,10 +81,13 @@ a.GetInfo.Automate.HasText {
 }
 
 #repairOptions,
-#dataContainer {
+#dataContainer,
+#diagTopContainer,
+#detailsPanel {
 	display: inline-block;
 	text-align: left;
 	width: 95%;
+	margin-top: 0 !important;
 }
 
 #lterrors {
@@ -98,7 +108,8 @@ a.GetInfo.Automate.HasText {
 	background-color: #252525;
 	overflow: auto;
 	padding: 0.5em 0em 0em 0.5em;
-	max-height: 36em;
+	height: 36em;
+	resize: both;
 }
 
 /* 2023.01.16 -- Joe McCall | To allow the Repair/Reinstall buttons to sit in-line. */
@@ -108,11 +119,13 @@ a.GetInfo.Automate.HasText {
 	width: 13em;
 }
 
-#restartOption {
+#restartOption,
+#diagButtonContainer {
 	margin-right: 1em;
 }
 
-#reinstallOption {
+#reinstallOption,
+#lastUpdateContainer {
 	margin: 0em;
 }
 
@@ -121,7 +134,7 @@ a.GetInfo.Automate.HasText {
 	display: block;
 	text-decoration: inherit;
 	color: #FFF !important;
-	border-radius: 0.2em;
+	border-radius: 6px;
 	padding: 0.4em 0.5em;
 	font-size: 1.0em;
 	font-weight: 500;
@@ -132,7 +145,7 @@ a.GetInfo.Automate.HasText {
 
 /* 2023.01.16 -- Joe McCall | Quality of life. */
 
-a:hover {
+.Automate a:hover {
 	background-color: #014e95 !important;
 }
 
@@ -143,28 +156,24 @@ a:hover {
 	margin: 0em 0em 0.2em 0em !important;
 }
 
-th {
-	width: 10em;
+.Automate th {
+	width: 11.5em;
 }
 
-td {
+.Automate td {
 	white-space: nowrap;
 }
 
-div,
-p,
-h1,
-h2,
-h3,
-h4,
-ul,
-ol,
-dl,
-table,
-blockquote,
-hr,
-dt,
-dd,
-pre {
-	margin: 0.4em 0em;
+.Automate div,
+.Automate p,
+.Automate h1,
+.Automate h2,
+.Automate h3,
+.Automate h4,
+.Automate hr,
+.Automate dt,
+.Automate dd,
+.Automate table
+.Automate pre {
+	margin: 0.2em 0em;
 }

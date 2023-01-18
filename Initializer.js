@@ -55,12 +55,16 @@ SC.event.addGlobalHandler(SC.event.QueryCommandButtons, function (eventArgs) {
 
 SC.event.addGlobalHandler(SC.event.InitializeTab, function (eventArgs) {
 	if (isMyTab(eventArgs.tabName)) {
-		SC.command.queryAndAddCommandButtons(eventArgs.container, eventArgs.tabName + 'Buttons');
-		SC.ui.addElement(eventArgs.container, 'DIV', { id: 'lastUpdateContainer' });
-		SC.ui.addElement(eventArgs.container, 'DIV', { id: 'dataContainer' });
-		SC.ui.addElement(eventArgs.container, 'TABLE', { id: 'dataTable' });
-		SC.ui.addElement(eventArgs.container, 'DIV', { id: 'repairOptions' });
-		SC.ui.addElement(eventArgs.container, 'DIV', { id: 'lterrors' });
+
+		SC.ui.addElement(eventArgs.container, 'DIV', { id: 'diagTopContainer' });
+		var diagButton = SC.ui.addElement($('diagTopContainer'), 'div', { id: 'diagButtonContainer', className: 'DiagActions' });
+		SC.command.queryAndAddCommandButtons(diagButton, eventArgs.tabName + 'Buttons');
+		SC.ui.addElement($('diagTopContainer'), 'DIV', { id: 'lastUpdateContainer' });
+		SC.ui.addElement(eventArgs.container, 'DIV', { id: 'detailsPanel',className: 'CollapsiblePanel' });
+		SC.ui.addElement($('detailsPanel'), 'DIV', { id: 'dataContainer', className: 'Header' });
+		SC.ui.addElement($('detailsPanel'), 'TABLE', { id: 'dataTable' });
+		SC.ui.addElement(eventArgs.container, 'DIV', { id: 'repairOptions', className: 'CollapsiblePanel' });
+		SC.ui.addElement(eventArgs.container, 'DIV', { id: 'lterrors', className: 'CollapsiblePanel' });
 	}
 });
 
@@ -308,11 +312,7 @@ function displayDataJson(json) {
 
 	SC.ui.addElement($('dataContainer'), 'h3', { id: "tableDetails", innerHTML: "Details" });
 
-	if ("ltposh_loaded" in json) {
-		SC.ui.addElement($('dataTable'), 'tr', { id: 'ltposh_row' });
-		SC.ui.addElement($('ltposh_row'), 'th', { id: 'ltposh_hdr', innerHTML: 'LTPosh Loaded' });
-		SC.ui.addElement($('ltposh_row'), 'td', { id: 'ltposh', innerHTML: (json["ltposh_loaded"]) ? "<span class='success'>✓</span>" : "<span class='failed'>✗</span>" });
-	}
+	console.log(json);
 
 	if ("server_addr" in json) {
 		if (!/Error/i.test(json["server_addr"]) && json["server_addr"] != null) { var server_status = "<span class='success'>✓</span>"; } else { var server_status = "<span class='failed'>✗</span>"; }
@@ -330,6 +330,13 @@ function displayDataJson(json) {
 		SC.ui.addElement($('dataTable'), 'tr', { id: 'agent_id_row' });
 		SC.ui.addElement($('agent_id_row'), 'th', { id: 'agent_id_hdr', innerHTML: 'Agent ID' });
 		SC.ui.addElement($('agent_id_row'), 'td', { id: 'agent_id', innerHTML: agentid_status + " " + json["id"] });
+	}
+
+	if ("locationid" in json) {
+		if (json["locationid"] > 0) { var locationid_status = "<span class='success'>✓</span>"; } else { var locationid_status = "<span class='failed'>✗</span>"; }
+		SC.ui.addElement($('dataTable'), 'tr', { id: 'locationid_row' });
+		SC.ui.addElement($('locationid_row'), 'th', { id: 'locationid_hdr', innerHTML: 'Location ID' });
+		SC.ui.addElement($('locationid_row'), 'td', { id: 'locationid', innerHTML: locationid_status + " " + json["locationid"] });
 	}
 
 	if ("update" in json) {
@@ -379,12 +386,10 @@ function displayDataJson(json) {
 		SC.ui.addElement($('ltsvcmon_row'), 'td', { id: 'ltsvc', innerHTML: ltsvcmon_status + " " + ltsvcmon_txt });
 	}
 
-	if ("locationid" in json) {
-		// 2023.01.16 -- Joe McCall | Improved readability; LocationID now lines up with the rest of the text on the right-hand side.
-		var spacer = "<span class='success'>&nbsp;&nbsp;&nbsp;</span>";
-		SC.ui.addElement($('dataTable'), 'tr', { id: 'locationid_row' });
-		SC.ui.addElement($('locationid_row'), 'th', { id: 'locationid_hdr', innerHTML: 'Location ID' });
-		SC.ui.addElement($('locationid_row'), 'td', { id: 'locationid', innerHTML: spacer + " " + json["locationid"] });
+	if ("ltposh_loaded" in json) {
+		SC.ui.addElement($('dataTable'), 'tr', { id: 'ltposh_row' });
+		SC.ui.addElement($('ltposh_row'), 'th', { id: 'ltposh_hdr', innerHTML: 'LTPosh Loaded' });
+		SC.ui.addElement($('ltposh_row'), 'td', { id: 'ltposh', innerHTML: (json["ltposh_loaded"]) ? "<span class='success'>✓</span> PowerShell Module Loaded" : "<span class='failed'>✗</span> Failed to load PowerShell Module", colspan: 2 });
 	}
 
 	if ("repair" in json) {
@@ -393,17 +398,16 @@ function displayDataJson(json) {
 		SC.ui.addElement($('repair_row'), 'td', { id: 'repair_val', innerHTML: json["repair"], colspan: 2 });
 	}
 
-	SC.ui.addElement($('repairOptions'), 'h3', { id: 'repair_hdr', innerHTML: "Repair Options" });
+	SC.ui.addElement($('repairOptions'), 'DIV', { id: 'repairDiv', innerHTML: '<h3 id="repair_hdr">Repair Options</h3>', className: 'Header' });
 	var repairCol1 = SC.ui.addElement($('repairOptions'), 'div', { id: 'restartOption', className: 'DiagActions' });
 	var repairCol2 = SC.ui.addElement($('repairOptions'), 'div', { id: 'reinstallOption', className: 'DiagActions' });
 	SC.command.queryAndAddCommandButtons(repairCol1, 'RestartButton');
 	SC.command.queryAndAddCommandButtons(repairCol2, 'ReinstallButton');
 
+	SC.ui.addElement($('repairOptions'), 'DIV', { id: 'lterrorsDiv', innerHTML: '<h3 id="lterrors_hdr">Agent Log</h3>', className: 'Header' });
 	if ("lterrors" in json && json['lterrors'] != "") {
-		SC.ui.addElement($('lterrors'), 'h3', { id: 'lterrors_hdr', innerHTML: "Agent Log" });
 		SC.ui.addElement($('lterrors'), 'pre', { id: 'lterrors_file', innerHTML: atob(json['lterrors']) });
 	}
-	// 2023.01.16 -- Joe McCall | Visual indication that there is no log file data to load.
 	else {
 		SC.ui.addElement($('lterrors'), 'pre', { id: 'lterrors_file', innerHTML: "No log file data found." });
 	}
