@@ -9,67 +9,58 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text.RegularExpressions;
 using System.Reflection;
-public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
+public class SessionEventTriggerAccessor : IAsyncDynamicEventTrigger<SessionEventTriggerEvent>
 {
-	// 2023.01.16 -- Joe McCall | Imported the newer ASync method from DEV branch
-	public Proc GetDeferredActionIfApplicable(SessionEventTriggerEvent sessionEventTriggerEvent)
+	//Whenever the ExtensionRuntime is modified this will be rebuilt anyways
+	string isInMaintenanceMode = ExtensionContext.Current.GetSettingValue("MaintenanceMode");
+	public async Task ProcessEventAsync(SessionEventTriggerEvent sessionEventTriggerEvent) 
 	{
-		if (
-			sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected
+		if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected
 			&& sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest
-			&& ExtensionContext.Current.GetSettingValue("MaintenanceMode") == "0"
-			&& sessionEventTriggerEvent.Session.ActiveConnections.Where(_ => _.ProcessType == ProcessType.Host).Count() == 0
-		)
-		{
-			return () => ScreenConnect.TaskExtensions.InvokeSync(async delegate
-			{
-				RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
-			});
-		}
+			&& isInMaintenanceMode == "0"
+			&& sessionEventTriggerEvent.Session.ActiveConnections.Where(_ => _.ProcessType == ProcessType.Host).Count() == 0)
+			await RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
 		else if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.RanCommand && IsDiagnosticContent(sessionEventTriggerEvent.SessionEvent.Data))
 		{
-			return () => ScreenConnect.TaskExtensions.InvokeSync(async delegate
+			try
 			{
-				try
-				{
-					var sessionDetails = SessionManagerPool.Demux.GetSessionDetailsAsync(sessionEventTriggerEvent.Session.SessionID);
-					string output = sessionEventTriggerEvent.SessionEvent.Data;
+				var sessionDetails = await SessionManagerPool.Demux.GetSessionDetailsAsync(sessionEventTriggerEvent.Session.SessionID);
+				string output = sessionEventTriggerEvent.SessionEvent.Data;
 
-					if (IsDiagResult(output))
-					{
-						var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
-						if (data[1] != "")
-						{
-							DiagOutput diag = Deserialize(data[1]);
-							var session = sessionEventTriggerEvent.Session;
-							if (diag.version != null)
-							{
-								session.CustomPropertyValues[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentVersionCustomProperty")) - 1] = diag.version;
-							}
-							if (diag.id != null)
-							{
-								session.CustomPropertyValues[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentIDCustomProperty")) - 1] = diag.id;
-							}
-							var sessionname = session.Name;
-							if (ExtensionContext.Current.GetSettingValue("SetUseMachineName") == "1")
-							{
-								sessionname = "";
-							}
-							await SessionManagerPool.Demux.UpdateSessionAsync("AutomateDiagnostics", session.SessionID, sessionname, session.IsPublic, session.Code, session.CustomPropertyValues);
-						}
-					}
-					else if (IsRepairResult(output))
-					{
-						RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
-					}
-				}
-				catch (Exception e)
+				if (IsDiagResult(output))
 				{
-					WriteLog(e.Message);
+					var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
+					if (data[1] != "")
+					{
+						DiagOutput diag = Deserialize(data[1]);
+						var session = sessionEventTriggerEvent.Session;
+						if (diag.version != null)
+						{
+							session.CustomPropertyValues[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentVersionCustomProperty")) - 1] = diag.version;
+						}
+						if (diag.id != null)
+						{
+							session.CustomPropertyValues[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentIDCustomProperty")) - 1] = diag.id;
+						}
+						var sessionname = session.Name;
+						if (ExtensionContext.Current.GetSettingValue("SetUseMachineName") == "1")
+						{
+							sessionname = "";
+						}
+						await SessionManagerPool.Demux.UpdateSessionAsync("AutomateDiagnostics", session.SessionID, sessionname, session.IsPublic, session.Code, session.CustomPropertyValues);
+					}
 				}
-			});
+				else if (IsRepairResult(output))
+				{
+					RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
+				}
+			}
+			catch (Exception e)
+			{
+				WriteLog(e.Message);
+			}
+			
 		}
-		return null;
 	}
 
 	public DiagOutput Deserialize(string json)
@@ -82,7 +73,7 @@ public class SessionEventTriggerAccessor : IDynamicSessionEventTrigger
 	}
 
 	// 2023.01.16 -- Joe McCall | Imported the newer ASync method from DEV branch
-	private async void RunDiagnostics(SessionEventTriggerEvent sessionEventTriggerEvent, ExtensionContext extensionContext)
+	private async Task RunDiagnostics(SessionEventTriggerEvent sessionEventTriggerEvent, ExtensionContext extensionContext)
 	{
 		var sessionDetails = await SessionManagerPool.Demux.GetSessionDetailsAsync(sessionEventTriggerEvent.Session.SessionID);
 		if (sessionDetails.Session.SessionType == SessionType.Access)
