@@ -8,12 +8,9 @@ using ScreenConnect;
 [DemandPermission(PermissionInfo.AdministerPermission)]
 public class Service : WebServiceBase
 {
-	public void NotifyCreatedVersionSessionGroup()
+	public async Task NotifyCreatedVersionSessionGroup()
 	{
-		var runtime = ExtensionRuntime.TryGetExtensionRuntime(ExtensionContext.Current.ExtensionID);
-		var settings = runtime.GetSettingValues(true);
-		settings["CreateVersionSessionGroup"] = "0";
-		ExtensionRuntime.SaveExtensionSettingValues(ExtensionContext.Current.ExtensionID, settings);
+		await ExtensionRuntime.SetExtensionSettingAsync(ExtensionContext.Current.ExtensionID, "CreateVersionSessionGroup", "0");
 	}
 
 	public void SetVersionCustomProperties()
