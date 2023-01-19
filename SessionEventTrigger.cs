@@ -35,13 +35,11 @@ public class SessionEventTriggerAccessor : IAsyncDynamicEventTrigger<SessionEven
 						DiagOutput diag = Deserialize(data[1]);
 						var session = sessionEventTriggerEvent.Session;
 						if (diag.version != null)
-						{
 							session.CustomPropertyValues[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentVersionCustomProperty")) - 1] = diag.version;
-						}
+
 						if (diag.id != null)
-						{
 							session.CustomPropertyValues[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentIDCustomProperty")) - 1] = diag.id;
-						}
+
 						await SessionManagerPool.Demux.UpdateSessionAsync(
 							"AutomateDiagnostics", 
 							session.SessionID, 
