@@ -52,7 +52,7 @@ public class SessionEventTriggerAccessor : IAsyncDynamicEventTrigger<SessionEven
 				}
 				else if (IsRepairResult(output))
 				{
-					RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
+					await RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
 				}
 			}
 			catch (Exception e)
@@ -73,6 +73,7 @@ public class SessionEventTriggerAccessor : IAsyncDynamicEventTrigger<SessionEven
 	}
 
 	// 2023.01.16 -- Joe McCall | Imported the newer ASync method from DEV branch
+	// 2023.01.19 -- swlinak | changed method prototype to return Task, can cause compiler issues if attempting to return void
 	private async Task RunDiagnostics(SessionEventTriggerEvent sessionEventTriggerEvent, ExtensionContext extensionContext)
 	{
 		var sessionDetails = await SessionManagerPool.Demux.GetSessionDetailsAsync(sessionEventTriggerEvent.Session.SessionID);
