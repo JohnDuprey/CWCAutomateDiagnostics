@@ -42,12 +42,14 @@ public class SessionEventTriggerAccessor : IAsyncDynamicEventTrigger<SessionEven
 						{
 							session.CustomPropertyValues[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentIDCustomProperty")) - 1] = diag.id;
 						}
-						var sessionname = session.Name;
-						if (ExtensionContext.Current.GetSettingValue("SetUseMachineName") == "1")
-						{
-							sessionname = "";
-						}
-						await SessionManagerPool.Demux.UpdateSessionAsync("AutomateDiagnostics", session.SessionID, sessionname, session.IsPublic, session.Code, session.CustomPropertyValues);
+						await SessionManagerPool.Demux.UpdateSessionAsync(
+							"AutomateDiagnostics", 
+							session.SessionID, 
+							ExtensionContext.Current.GetSettingValue("SetUseMachineName") == "1" ? "" : session.Name, 
+							session.IsPublic, 
+							session.Code, 
+							session.CustomPropertyValues
+						);
 					}
 				}
 				else if (IsRepairResult(output))
