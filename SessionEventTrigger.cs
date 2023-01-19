@@ -9,15 +9,15 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text.RegularExpressions;
 using System.Reflection;
+using System.Threading.Tasks;
+
 public class SessionEventTriggerAccessor : IAsyncDynamicEventTrigger<SessionEventTriggerEvent>
 {
-	//Whenever the ExtensionRuntime is modified this will be rebuilt anyways
-	string isInMaintenanceMode = ExtensionContext.Current.GetSettingValue("MaintenanceMode");
 	public async Task ProcessEventAsync(SessionEventTriggerEvent sessionEventTriggerEvent) 
 	{
 		if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected
 			&& sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest
-			&& isInMaintenanceMode == "0"
+			&& ExtensionContext.Current.GetSettingValue("MaintenanceMode") == "0"
 			&& sessionEventTriggerEvent.Session.ActiveConnections.Where(_ => _.ProcessType == ProcessType.Host).Count() == 0)
 			await RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
 		else if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.RanCommand && IsDiagnosticContent(sessionEventTriggerEvent.SessionEvent.Data))
