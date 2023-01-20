@@ -45,7 +45,7 @@ Run ConnectWise Automate agent diagnostics from ConnectWise Control. This extens
 
 | Diagnostic Details  | Agent Logs |
 | ------------- | ------------- |
-| ![Details](https://user-images.githubusercontent.com/41485711/212959588-a29b5173-bf9f-427d-9ae8-47a5c2593143.png) | ![LTRrrors](https://user-images.githubusercontent.com/41485711/212806625-1f95e9a1-3c16-489b-9219-5a90a36a4f3f.png) |
+| ![Details](https://user-images.githubusercontent.com/41485711/213599129-03b69221-32e0-4bb8-9088-fc6f84ba4f90.png) | ![LTRrrors](https://user-images.githubusercontent.com/41485711/213599159-18b5419a-3f7a-4ce7-b18e-18e4c288b921.png) |
 
 
 ## Troubleshooting
