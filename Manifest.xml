@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ExtensionManifest>
-	<Version>1.0.7.3</Version>
+	<Version>1.0.7.2</Version>
 	<Name>Automate Diagnostics</Name>
 	<Author>John Duprey - Complete Network</Author>
 	<ShortDescription>Diagnoses Automate Agents from CW Control. Visit https://github.com/johnduprey/CWCAutomateDiagnostics for the Readme.</ShortDescription>

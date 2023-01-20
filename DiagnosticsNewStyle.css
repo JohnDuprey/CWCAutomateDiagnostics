@@ -8,6 +8,7 @@
 	margin-left: auto;
 	margin-right: auto;
 	table-layout: fixed;
+	margin: 0.4em 0em;
 }
 
 .Automate .Header {
@@ -44,19 +45,6 @@
 	z-index: 5;
 }
 
-/*a.GetInfo.Automate.HasText {
-	display: inline-block;
-	width: 13em;
-	text-decoration: inherit;
-	color: #FFF !important;
-	border-radius: 0.2em;
-	padding: 0.4em 0.5em;
-	font-size: 1.0em;
-	font-weight: 500;
-	text-align: left;
-	background-color: #026CCF;
-}*/
-
 #dataTableHeader,
 #dataTableData {
 	border: 0px;
@@ -76,7 +64,6 @@
 }
 
 #dataTable {
-	top: 10%;
 	width: 95%;
 }
 
@@ -106,7 +93,6 @@
 	*/
 	font-size: 0.9em;
 	background-color: #252525;
-	color: #FFFFFF;
 	overflow: auto;
 	padding: 0.5em 0em 0em 0.5em;
 	height: 36em;
@@ -145,15 +131,13 @@
 }
 
 /* 2023.01.16 -- Joe McCall | Quality of life. */
-
 .Automate a:hover {
 	background-color: #014e95 !important;
 }
 
 /* 2023.01.16 -- Joe McCall | Reduce wasted space */
-
-#tableDetails,
 #dataContainer {
+	width: 100%;
 	margin: 0em 0em 0.2em 0em !important;
 }
 
@@ -174,7 +158,6 @@
 .Automate hr,
 .Automate dt,
 .Automate dd,
-.Automate table
 .Automate pre {
-	margin: 0.2em 0em;
+	margin: 0.4em 0em;
 }
