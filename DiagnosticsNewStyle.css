@@ -8,6 +8,7 @@
 	margin-left: auto;
 	margin-right: auto;
 	table-layout: fixed;
+	margin: 0.4em 0em;
 }
 
 .Automate .Header {
@@ -63,7 +64,6 @@
 }
 
 #dataTable {
-	top: 10%;
 	width: 95%;
 }
 
@@ -131,7 +131,6 @@
 }
 
 /* 2023.01.16 -- Joe McCall | Quality of life. */
-
 .Automate a:hover {
 	background-color: #014e95 !important;
 }
@@ -159,6 +158,6 @@
 .Automate hr,
 .Automate dt,
 .Automate dd,
-.Automate table .Automate pre {
-	margin: 0.2em 0em;
+.Automate pre {
+	margin: 0.4em 0em;
 }

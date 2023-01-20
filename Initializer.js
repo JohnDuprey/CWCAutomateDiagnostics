@@ -56,6 +56,7 @@ SC.event.addGlobalHandler(SC.event.QueryCommandButtons, function (eventArgs) {
 SC.event.addGlobalHandler(SC.event.InitializeTab, function (eventArgs) {
 	if (isMyTab(eventArgs.tabName)) {
 
+		//2023.01.18 -- Joe McCall | Adjusted the HTML structure to make use of the CollapsiblePanel classes for formatting only.
 		SC.ui.addElement(eventArgs.container, 'DIV', { id: 'diagTopContainer' });
 		var diagButton = SC.ui.addElement($('diagTopContainer'), 'div', { id: 'diagButtonContainer', className: 'DiagActions' });
 		SC.command.queryAndAddCommandButtons(diagButton, eventArgs.tabName + 'Buttons');
@@ -268,6 +269,7 @@ function displayAutomateDiagInfo(latestDiagnosticEvent, baseTime) {
 		var data = output.split("!---BEGIN JSON---!");
 
 		displayDataJson(parseJson(data[1]));
+		//2023.01.19 -- Joe McCall | Time calculation was inverted and showing a future time.
 		$('lastUpdateContainer').innerHTML = SC.res['Diagnostics.LastUpdateField.Label'] + new Date(baseTime - latestDiagnosticEvent.Time).toLocaleString();
 	}
 	catch (e) {
@@ -304,6 +306,7 @@ function parseJson(eventData) {
 
 function displayDataJson(json) {
 
+	//2023.01.19 -- Joe McCall | Re-ordered the Details elements and added a more uniform formatting for all entries.
 	SC.ui.addElement($('dataContainer'), 'h3', { id: "tableDetails", innerHTML: "Details" });
 
 	if ("server_addr" in json) {
@@ -390,28 +393,29 @@ function displayDataJson(json) {
 		SC.ui.addElement($('repair_row'), 'td', { id: 'repair_val', innerHTML: json["repair"], colspan: 2 });
 	}
 
+	//2023.01.18 -- Joe McCall | Implemented native HTML classes for formatting.
 	SC.ui.addElement($('repairOptions'), 'DIV', { id: 'repairDiv', innerHTML: '<h3 id="repair_hdr">Repair Options</h3>', className: 'Header' });
 	var repairCol1 = SC.ui.addElement($('repairOptions'), 'div', { id: 'restartOption', className: 'DiagActions' });
 	var repairCol2 = SC.ui.addElement($('repairOptions'), 'div', { id: 'reinstallOption', className: 'DiagActions' });
 	SC.command.queryAndAddCommandButtons(repairCol1, 'RestartButton');
 	SC.command.queryAndAddCommandButtons(repairCol2, 'ReinstallButton');
 
-  SC.ui.addElement($("repairOptions"), "DIV", {
-    id: "lterrorsDiv",
-    innerHTML: '<h3 id="lterrors_hdr">Agent Log</h3>',
-    className: "Header",
-  });
-  if ("lterrors" in json && json["lterrors"] != "") {
-    SC.ui.addElement($("lterrors"), "pre", {
-      id: "lterrors_file",
-      innerHTML: atob(json["lterrors"]),
-    });
-  } else {
-    SC.ui.addElement($("lterrors"), "pre", {
-      id: "lterrors_file",
-      innerHTML: "Click 'Run CWA Diagnostic' to pull in the latest log file.",
-    });
-  }
+	SC.ui.addElement($("repairOptions"), "DIV", {
+		id: "lterrorsDiv",
+		innerHTML: '<h3 id="lterrors_hdr">Agent Log</h3>',
+		className: "Header",
+	});
+	if ("lterrors" in json && json["lterrors"] != "") {
+		SC.ui.addElement($("lterrors"), "pre", {
+			id: "lterrors_file",
+			innerHTML: atob(json["lterrors"]),
+		});
+	} else {
+		SC.ui.addElement($("lterrors"), "pre", {
+			id: "lterrors_file",
+			innerHTML: "Click 'Run CWA Diagnostic' to pull in the latest log file.",
+		});
+	}
 }
 
 function isUsingInternetExplorerOrEdge() {
