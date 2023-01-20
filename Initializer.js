@@ -717,7 +717,7 @@ function displayDataJson(json) {
   } else {
     SC.ui.addElement($("lterrors"), "pre", {
       id: "lterrors_file",
-      innerHTML: "No log file data found.",
+      innerHTML: "Click 'Run CWA Diagnostic' to pull in the latest log file.",
     });
   }
 }
