@@ -396,13 +396,22 @@ function displayDataJson(json) {
 	SC.command.queryAndAddCommandButtons(repairCol1, 'RestartButton');
 	SC.command.queryAndAddCommandButtons(repairCol2, 'ReinstallButton');
 
-	SC.ui.addElement($('repairOptions'), 'DIV', { id: 'lterrorsDiv', innerHTML: '<h3 id="lterrors_hdr">Agent Log</h3>', className: 'Header' });
-	if ("lterrors" in json && json['lterrors'] != "") {
-		SC.ui.addElement($('lterrors'), 'pre', { id: 'lterrors_file', innerHTML: atob(json['lterrors']) });
-	}
-	else {
-		SC.ui.addElement($('lterrors'), 'pre', { id: 'lterrors_file', innerHTML: "No log file data found." });
-	}
+  SC.ui.addElement($("repairOptions"), "DIV", {
+    id: "lterrorsDiv",
+    innerHTML: '<h3 id="lterrors_hdr">Agent Log</h3>',
+    className: "Header",
+  });
+  if ("lterrors" in json && json["lterrors"] != "") {
+    SC.ui.addElement($("lterrors"), "pre", {
+      id: "lterrors_file",
+      innerHTML: atob(json["lterrors"]),
+    });
+  } else {
+    SC.ui.addElement($("lterrors"), "pre", {
+      id: "lterrors_file",
+      innerHTML: "Click 'Run CWA Diagnostic' to pull in the latest log file.",
+    });
+  }
 }
 
 function isUsingInternetExplorerOrEdge() {
