@@ -104,6 +104,17 @@ public class SessionEventTriggerAccessor : IAsyncDynamicEventTrigger<SessionEven
 			}
 			else { command = "@echo off\necho No OS Detected, try running the diagnostic again"; }
 
+#if SC_DEV || SC_22_8
+			await SessionManagerPool.Demux.AddSessionEventAsync(
+				sessionEventTriggerEvent.Session.SessionID,
+				new SessionEvent
+				{
+					EventType = SessionEventType.QueuedCommand,
+					Host = "AutomateDiagnostics",
+					Data = command,
+				}
+			);
+#else
 			await SessionManagerPool.Demux.AddSessionEventAsync(
 				sessionEventTriggerEvent.Session.SessionID,
 				SessionEventType.QueuedCommand,
@@ -111,6 +122,7 @@ public class SessionEventTriggerAccessor : IAsyncDynamicEventTrigger<SessionEven
 				"AutomateDiagnostics",
 				command
 			);
+#endif
 		}
 	}
 
