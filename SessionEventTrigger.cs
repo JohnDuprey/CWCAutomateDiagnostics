@@ -47,10 +47,10 @@ SessionEventTriggerAccessor
 
                         await SessionManagerPool.Demux.UpdateSessionAsync(
                             "AutomateDiagnostics", 
-                            session.SessionID, 
+                            sessionEventTriggerEvent.Session.SessionID, 
                             ExtensionContext.Current.GetSettingValue("SetUseMachineName") == "1" ? "": session.Name, 
-                            session.IsPublic, 
-                            session.Code, 
+                            sessionEventTriggerEvent.Session.IsPublic, 
+                            sessionEventTriggerEvent.Session.Code, 
                             newCustomProperties
                         );
                     }
