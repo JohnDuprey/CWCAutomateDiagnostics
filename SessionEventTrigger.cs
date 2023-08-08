@@ -32,8 +32,7 @@ SessionEventTriggerAccessor
                 .Count() ==
             0
         )
-            await RunDiagnostics(sessionEventTriggerEvent,
-            ExtensionContext.Current);
+            await RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
         else if (
             sessionEventTriggerEvent.SessionEvent.EventType ==
             SessionEventType.RanCommand &&
