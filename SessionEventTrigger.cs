@@ -18,84 +18,45 @@ SessionEventTriggerAccessor
     public async Task
     ProcessEventAsync(SessionEventTriggerEvent sessionEventTriggerEvent)
     {
-        if (
-            sessionEventTriggerEvent.SessionEvent.EventType ==
-            SessionEventType.Connected &&
-            sessionEventTriggerEvent.SessionConnection.ProcessType ==
-            ProcessType.Guest &&
-            ExtensionContext.Current.GetSettingValue("MaintenanceMode") ==
-            "0" &&
-            sessionEventTriggerEvent
-                .Session
-                .ActiveConnections
-                .Where(_ => _.ProcessType == ProcessType.Host)
-                .Count() ==
-            0
+        if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected 
+            && sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest 
+            && ExtensionContext.Current.GetSettingValue("MaintenanceMode") == "0" 
+            && sessionEventTriggerEvent.Session.ActiveConnections.Where(_ => _.ProcessType == ProcessType.Host).Count() == 0
         )
-            await RunDiagnostics(sessionEventTriggerEvent,
-            ExtensionContext.Current);
-        else if (
-            sessionEventTriggerEvent.SessionEvent.EventType ==
-            SessionEventType.RanCommand &&
-            IsDiagnosticContent(sessionEventTriggerEvent.SessionEvent.Data)
-        )
+            await RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
+        else if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.RanCommand && IsDiagnosticContent(sessionEventTriggerEvent.SessionEvent.Data))
         {
             try
             {
-                var sessionDetails =
-                    await SessionManagerPool
-                        .Demux
-                        .GetSessionDetailsAsync(sessionEventTriggerEvent
-                            .Session
-                            .SessionID);
+                var sessionDetails = await SessionManagerPool.Demux.GetSessionDetailsAsync(sessionEventTriggerEvent.Session.SessionID);
                 string output = sessionEventTriggerEvent.SessionEvent.Data;
 
                 if (IsDiagResult(output))
                 {
-                    var data =
-                        output
-                            .Split(new string[] { "!---BEGIN JSON---!" },
-                            StringSplitOptions.None);
+                    var data = output.Split(new string[] { "!---BEGIN JSON---!" }, StringSplitOptions.None);
                     if (data[1] != "")
                     {
                         DiagOutput diag = Deserialize(data[1]);
-                        var session = sessionEventTriggerEvent.Session;
+                        var newCustomProperties = sessionEventTriggerEvent.Session.CustomPropertyValues.ToArray();
+                        
                         if (diag.version != null)
-                            session
-                                .CustomPropertyValues[Int32
-                                    .Parse(ExtensionContext
-                                        .Current
-                                        .GetSettingValue("AgentVersionCustomProperty")) -
-                                1] = diag.version;
+                            newCustomProperties[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentVersionCustomProperty")) - 1] = diag.version;
 
                         if (diag.id != null)
-                            session
-                                .CustomPropertyValues[Int32
-                                    .Parse(ExtensionContext
-                                        .Current
-                                        .GetSettingValue("AgentIDCustomProperty")) -
-                                1] = diag.id;
+                            newCustomProperties[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentIDCustomProperty")) - 1] = diag.id;
 
-                        await SessionManagerPool
-                            .Demux
-                            .UpdateSessionAsync("AutomateDiagnostics",
-                            session.SessionID,
-                            ExtensionContext
-                                .Current
-                                .GetSettingValue("SetUseMachineName") ==
-                            "1"
-                                ? ""
-                                : session.Name,
-                            session.IsPublic,
-                            session.Code,
-                            session.CustomPropertyValues);
+                        await SessionManagerPool.Demux.UpdateSessionAsync(
+                            "AutomateDiagnostics", 
+                            session.SessionID, 
+                            ExtensionContext.Current.GetSettingValue("SetUseMachineName") == "1" ? "": session.Name, 
+                            session.IsPublic, 
+                            session.Code, 
+                            newCustomProperties
+                        );
                     }
                 }
                 else if (IsRepairResult(output))
-                {
-                    await RunDiagnostics(sessionEventTriggerEvent,
-                    ExtensionContext.Current);
-                }
+                    await RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
             }
             catch (Exception e)
             {
@@ -106,8 +67,7 @@ SessionEventTriggerAccessor
 
     public DiagOutput Deserialize(string json)
     {
-        DataContractJsonSerializer ser =
-            new DataContractJsonSerializer(typeof (DiagOutput));
+        DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof (DiagOutput));
         using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(json)))
         {
             return ser.ReadObject(ms) as DiagOutput;
@@ -116,18 +76,9 @@ SessionEventTriggerAccessor
 
     // 2023.01.16 -- Joe McCall | Imported the newer ASync method from DEV branch
     // 2023.01.19 -- swlinak | changed method prototype to return Task, can cause compiler issues if attempting to return void
-    private async Task
-    RunDiagnostics(
-        SessionEventTriggerEvent sessionEventTriggerEvent,
-        ExtensionContext extensionContext
-    )
+    private async Task RunDiagnostics(SessionEventTriggerEvent sessionEventTriggerEvent, ExtensionContext extensionContext)
     {
-        var sessionDetails =
-            await SessionManagerPool
-                .Demux
-                .GetSessionDetailsAsync(sessionEventTriggerEvent
-                    .Session
-                    .SessionID);
+        var sessionDetails = await SessionManagerPool.Demux.GetSessionDetailsAsync(sessionEventTriggerEvent.Session.SessionID);
         if (sessionDetails.Session.SessionType == SessionType.Access)
         {
             var ltposh = extensionContext.GetSettingValue("PathToLTPoSh");
@@ -178,46 +129,30 @@ SessionEventTriggerAccessor
                     "@echo off\necho No OS Detected, try running the diagnostic again";
             }
 
-            await SessionManagerPool
-                .Demux
-                .AddSessionEventAsync(sessionEventTriggerEvent
-                    .Session
-                    .SessionID,
-                SessionEventType.QueuedCommand,
-                SessionEventAttributes.NeedsProcessing,
-                "AutomateDiagnostics",
-                command);
+            await SessionManagerPool.Demux.AddSessionEventAsync(
+                sessionEventTriggerEvent.Session.SessionID, 
+                SessionEventType.QueuedCommand, 
+                SessionEventAttributes.NeedsProcessing, 
+                "AutomateDiagnostics", 
+                command
+            );
         }
     }
 
     private bool IsDiagnosticContent(string eventData)
     {
-        if (
-            eventData.StartsWith("DIAGNOSTIC-RESPONSE/1") ||
-            eventData.StartsWith("\ufeffDIAGNOSTIC-RESPONSE/1")
-        )
-        {
+        if (eventData.StartsWith("DIAGNOSTIC-RESPONSE/1") || eventData.StartsWith("\ufeffDIAGNOSTIC-RESPONSE/1"))
             return true;
-        }
         else
-        {
             return false;
-        }
     }
 
     private bool IsRepairResult(string eventData)
     {
-        if (
-            eventData.Contains("DiagnosticType: ReinstallAutomate") ||
-            eventData.Contains("DiagnosticType: RestartAutomate")
-        )
-        {
+        if (eventData.Contains("DiagnosticType: ReinstallAutomate") ||eventData.Contains("DiagnosticType: RestartAutomate"))
             return true;
-        }
         else
-        {
             return false;
-        }
     }
 
     private bool IsDiagResult(string eventData)
