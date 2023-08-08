@@ -18,9 +18,9 @@ SessionEventTriggerAccessor
     public async Task
     ProcessEventAsync(SessionEventTriggerEvent sessionEventTriggerEvent)
     {
-        if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected 
-            && sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest 
-            && ExtensionContext.Current.GetSettingValue("MaintenanceMode") == "0" 
+        if (sessionEventTriggerEvent.SessionEvent.EventType == SessionEventType.Connected
+            && sessionEventTriggerEvent.SessionConnection.ProcessType == ProcessType.Guest
+            && ExtensionContext.Current.GetSettingValue("MaintenanceMode") == "0"
             && sessionEventTriggerEvent.Session.ActiveConnections.Where(_ => _.ProcessType == ProcessType.Host).Count() == 0
         )
             await RunDiagnostics(sessionEventTriggerEvent, ExtensionContext.Current);
@@ -38,7 +38,7 @@ SessionEventTriggerAccessor
                     {
                         DiagOutput diag = Deserialize(data[1]);
                         var newCustomProperties = sessionEventTriggerEvent.Session.CustomPropertyValues.ToArray();
-                        
+
                         if (diag.version != null)
                             newCustomProperties[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentVersionCustomProperty")) - 1] = diag.version;
 
@@ -46,11 +46,11 @@ SessionEventTriggerAccessor
                             newCustomProperties[Int32.Parse(ExtensionContext.Current.GetSettingValue("AgentIDCustomProperty")) - 1] = diag.id;
 
                         await SessionManagerPool.Demux.UpdateSessionAsync(
-                            "AutomateDiagnostics", 
-                            sessionEventTriggerEvent.Session.SessionID, 
-                            ExtensionContext.Current.GetSettingValue("SetUseMachineName") == "1" ? "": session.Name, 
-                            sessionEventTriggerEvent.Session.IsPublic, 
-                            sessionEventTriggerEvent.Session.Code, 
+                            "AutomateDiagnostics",
+                            sessionEventTriggerEvent.Session.SessionID,
+                            ExtensionContext.Current.GetSettingValue("SetUseMachineName") == "1" ? "": sessionEventTriggerEvent.Session.Name,
+                            sessionEventTriggerEvent.Session.IsPublic,
+                            sessionEventTriggerEvent.Session.Code,
                             newCustomProperties
                         );
                     }
@@ -130,10 +130,10 @@ SessionEventTriggerAccessor
             }
 
             await SessionManagerPool.Demux.AddSessionEventAsync(
-                sessionEventTriggerEvent.Session.SessionID, 
-                SessionEventType.QueuedCommand, 
-                SessionEventAttributes.NeedsProcessing, 
-                "AutomateDiagnostics", 
+                sessionEventTriggerEvent.Session.SessionID,
+                SessionEventType.QueuedCommand,
+                SessionEventAttributes.NeedsProcessing,
+                "AutomateDiagnostics",
                 command
             );
         }
